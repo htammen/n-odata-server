@@ -1,0 +1,25 @@
+{
+  "ids": {
+    "User": 1,
+    "AccessToken": 1,
+    "ACL": 1,
+    "RoleMapping": 1,
+    "Role": 1,
+    "person": 7
+  },
+  "models": {
+    "User": {},
+    "AccessToken": {},
+    "ACL": {},
+    "RoleMapping": {},
+    "Role": {},
+    "person": {
+      "1": "{\"firstname\":\"Maria\",\"lastname\":\"Meier\",\"id\":1}",
+      "2": "{\"firstname\":\"Helmut\",\"lastname\":\"Tammen\",\"id\":2}",
+      "3": "{\"firstname\":\"Walter\",\"lastname\":\"Frosch\",\"id\":3}",
+      "4": "{\"firstname\":\"Mia\",\"lastname\":\"Thompson\",\"id\":4}",
+      "5": "{\"firstname\":\"Peter\",\"lastname\":\"Friday\",\"id\":5}",
+      "6": "{\"firstname\":\"Joe\",\"lastname\":\"Lucky\",\"id\":6}"
+    }
+  }
+}
