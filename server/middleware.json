@@ -23,7 +23,7 @@
       ]
     },
     "./middleware/odatahandler": {
-      "paths": "/*.svc/**"
+      "paths": "/odata/*"
     }
   },
   "files": {},
