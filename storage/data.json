@@ -5,7 +5,7 @@
     "ACL": 1,
     "RoleMapping": 1,
     "Role": 1,
-    "person": 7
+    "person": 12
   },
   "models": {
     "User": {},
@@ -19,7 +19,12 @@
       "3": "{\"firstname\":\"Walter\",\"lastname\":\"Frosch\",\"id\":3}",
       "4": "{\"firstname\":\"Mia\",\"lastname\":\"Thompson\",\"id\":4}",
       "5": "{\"firstname\":\"Peter\",\"lastname\":\"Friday\",\"id\":5}",
-      "6": "{\"firstname\":\"Joe\",\"lastname\":\"Lucky\",\"id\":6}"
+      "6": "{\"firstname\":\"Joe\",\"lastname\":\"Lucky\",\"id\":6}",
+      "7": "{\"firstname\":\"Joe\",\"lastname\":\"Lucky\",\"id\":7}",
+      "8": "{\"firstname\":\"Johannes\",\"lastname\":\"Hamel\",\"id\":8}",
+      "9": "{\"firstname\":\"Martin\",\"lastname\":\"Müller\",\"id\":9}",
+      "10": "{\"firstname\":\"Martin\",\"lastname\":\"Müller\",\"id\":10}",
+      "11": "{\"firstname\":\"Martin\",\"lastname\":\"Müller\",\"id\":11}"
     }
   }
 }

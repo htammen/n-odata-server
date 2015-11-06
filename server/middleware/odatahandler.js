@@ -5,6 +5,7 @@
 var GetRequestTypeEnum = {
   SERVICE: 0,
   COLLECTION: 1,
+  ENTITY: 2,
   UNDEFINED: 999
 };
 
@@ -48,9 +49,25 @@ module.exports = function() {
       case GetRequestTypeEnum.COLLECTION:
         _getCollectionData(req, res);
         break;
+      case GetRequestTypeEnum.ENTITY:
+        _getEntityData(req, res);
+        break;
       default:
         res.sendStatus(404);
     }
+  }
+
+  /**
+   * Returns the base URL for the service that consists of
+   * <protocol>://<host>:<port>
+   * E.g.: http://127.0.0.1:3000
+   * @param req
+   * @returns {string} URL
+   * @private
+   */
+  function _getBaseURL(req) {
+    return req.protocol + '://' + req.hostname +
+      ':' + req.app.get('port');
   }
 
   /**
@@ -75,8 +92,7 @@ module.exports = function() {
 
     var result = {};
     //TODO: The port is not available via the request. How can we get it?
-    result['@odata.context'] = req.protocol + '://' + req.hostname +
-                                ':<port>' + '/odata/$metadata';
+    result['@odata.context'] = _getBaseURL(req) + '/odata/$metadata';
     result.value = json;
     res.send(result);
   }
@@ -94,6 +110,30 @@ module.exports = function() {
       ModelClass.find(function(err, data) {
         var result = {};
         result.value = data;
+        res.send(result);
+      });
+    } else {
+      res.sendStatus(404);
+    }
+  }
+
+  /**
+   * Get the data for exactly one object of an entity type
+   * @param req
+   * @param res
+   * @private
+   */
+  function _getEntityData(req, res) {
+	  var param0 = req.params[0];
+    // extract the id from the request
+    var id = param0.substring(param0.indexOf('(') +2, param0.indexOf(')')-1);
+    var collection = param0.substr(0, param0.indexOf('('));
+    var ModelClass = _getModelClass(req.app, param0);
+    if(ModelClass) {
+      ModelClass.findById(id, function(err, instance) {
+        var result = {};
+        result = instance.toJSON();
+        result['@odata.context'] = _getBaseURL(req) + '/odata/$metadata#' + collection + '/$entity';
         res.send(result);
       });
     } else {
@@ -128,6 +168,8 @@ module.exports = function() {
     else {
       if(_isRequestCollection(req)) {
         retValue = GetRequestTypeEnum.COLLECTION;
+      } else if(_isRequestEntity(req)) {
+        retValue = GetRequestTypeEnum.ENTITY;
       } else {
 
       }
@@ -160,6 +202,20 @@ module.exports = function() {
   }
 
   /**
+   * Determines if the given request is a request for a single entity object
+   * @param req
+   * @private
+   */
+  function _isRequestEntity(req) {
+    var retValue = false;
+    var param0 = req.params[0];
+    if( param0.indexOf('(') !== -1) {
+      retValue = true;
+    }
+    return retValue;
+  }
+
+  /**
    * Retrieves the plural for the given model. This is either retrieved
    * from the settings.plural of the model or if not defined an 's' is appended
    * to the model name
@@ -182,14 +238,18 @@ module.exports = function() {
    * @return {[type]}     [description]
    */
   function _handlePost(req, res) {
-    var ModelClass = _getModelClass(req.app, req.params[1]);
+    var ModelClass = _getModelClass(req.app, req.params[0]);
 
     if(ModelClass) {
+      var readLocation = _getBaseURL(req) + '/odata/' + ModelClass.definition.settings.plural;
       ModelClass.create(req.body, function(err, obj) {
         if(err || obj === null) {
           res.sendStatus(500);
         } else {
-          res.sendStatus(200);
+          // set location header to update or read URL
+          res.location(readLocation + '(\'' + obj.id + '\')');
+          // status must be 201
+          res.sendStatus(201);
         }
       });
     } else {
@@ -208,8 +268,13 @@ module.exports = function() {
   function _getModelClass(app, className) {
     var ModelClass;
 
-    // Try to get the singular class first
-    ModelClass = app.models[className];
+    if(className.indexOf('(') !== -1) {
+      // its a request for a single entity object
+      className = className.substr(0, className.indexOf('('));
+    } else {
+      // Try to get the singular class first
+      ModelClass = app.models[className];
+    }
 
     // Now try to get the class by it's plural definition
     // In this case its a collection
