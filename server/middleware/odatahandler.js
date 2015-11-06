@@ -23,7 +23,7 @@ module.exports = function() {
         res.sendStatus(404);
         break;
       case 'DELETE':
-        res.sendStatus(404);
+        _handleDelete(req, res);
         break;
       default:
         res.sendStatus(404);
@@ -257,6 +257,30 @@ module.exports = function() {
     }
   }
 
+  /**
+   * handles the DELETE request of the OData server
+   * @param req
+   * @param res
+   * @private
+   */
+  function _handleDelete(req, res) {
+    var param0 = req.params[0];
+    // extract the id from the request
+    var id = param0.substring(param0.indexOf('(') +2, param0.indexOf(')')-1);
+    var collection = param0.substr(0, param0.indexOf('('));
+    var ModelClass = _getModelClass(req.app, param0);
+    if(ModelClass) {
+      ModelClass.destroyById(id, function(err) {
+        if(!err) {
+          res.sendStatus(204);
+        } else {
+          res.sendStatus(500);
+        }
+      });
+    } else {
+      res.sendStatus(404);
+    }
+  }
 
   /**
    * get the Model for a className. The className must be equal to
