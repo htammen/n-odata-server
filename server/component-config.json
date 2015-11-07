@@ -1,5 +1,8 @@
 {
   "loopback-component-explorer": {
     "mountPath": "/explorer"
+  },
+  "./components/odata": {
+    "path": "/odata/*"
   }
 }

@@ -1,4 +1,12 @@
 /**
+ * This module implements the odata server functionality
+ * At the moment it is implemented as local loopback component
+ * See here for more details on creating and registering loopback components
+ * https://docs.strongloop.com/display/public/LB/Creating+components
+ *
+ */
+
+/**
  * Type of GET-request that was sent by the client
  * @type {Object}
  */
@@ -10,9 +18,9 @@ var GetRequestTypeEnum = {
 };
 
 
-module.exports = function() {
-  return function oDataMiddleware(req, res, next) {
-    switch(req.method) {
+module.exports = function (loopbackApplication, options) {
+  loopbackApplication.use(options.path, function (req, res, next) {
+    switch (req.method) {
       case 'GET':
         _handleGet(req, res);
         break;
@@ -29,8 +37,8 @@ module.exports = function() {
         res.sendStatus(404);
         break;
     }
-
-  };
+  });
+};
 
   /**
    * handles the GET request to the OData server
@@ -321,4 +329,4 @@ module.exports = function() {
     return ModelClass;
   }
 
-};
+

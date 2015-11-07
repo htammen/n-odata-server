@@ -21,9 +21,6 @@
       "paths": [
         "${restApiRoot}"
       ]
-    },
-    "./middleware/odatahandler": {
-      "paths": "/odata/*"
     }
   },
   "files": {},
