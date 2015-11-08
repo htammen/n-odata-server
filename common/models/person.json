@@ -14,6 +14,14 @@
     "lastname": {
       "type": "string",
       "required": true
+    },
+    "gender": {
+      "type": "string",
+      "required": false
+    },
+    "age": {
+      "type": "Number",
+      "required": false
     }
   },
   "validations": [],

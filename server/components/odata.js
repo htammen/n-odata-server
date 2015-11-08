@@ -35,12 +35,12 @@ module.exports = function (loopbackApplication, options) {
         break;
       // PATCH should be the preferred method to update an entity
       case 'PATCH':
-        res.sendStatus(404);
+        _handlePATCH(req, res);
         break;
       // MERGE is used in OData V2.0 to update an entity. This has been changed in
       // in V4.0 to PATCH
       case 'MERGE':
-        res.sendStatus(404);
+        _handlePATCH(req, res);
         break;
       case 'DELETE':
         _handleDelete(req, res);
@@ -317,6 +317,45 @@ module.exports = function (loopbackApplication, options) {
       res.sendStatus(404);
     }
   }
+
+/**
+ * handles the PATCH request to the OData server. The PATCH request is used to update an entity where
+ * only the submitted properties are set. The other properties of the entity will not be changed.
+ * @param req
+ * @param res
+ * @private
+ */
+function _handlePATCH(req, res) {
+  var ModelClass = _getModelClass(req.app, req.params[0]);
+
+  if(ModelClass) {
+    var id = _getIdFromUrlParameter(req.params[0]);
+    var reqObj = req.body;
+    // create an object that is saved to the db and set all properties from request body
+    // If not defined there set default value or undefined if no default has been defined
+    var updateObj = {};
+    ModelClass.forEachProperty(function(propName, property) {
+      if(reqObj[propName]) {
+        updateObj[propName] = reqObj[propName];
+      }
+    });
+
+    var idName = ModelClass.getIdName();
+    var whereObj = {};
+    whereObj[idName] = id;
+    // Here we use the static method updataAll. We could also have been read the entity
+    // and updated it with update
+    ModelClass.updateAll(whereObj, updateObj, function(err, results) {
+      if(err || results.count === 0) {
+        res.sendStatus(500);
+      } else {
+        res.sendStatus(204);
+      }
+    });
+  } else {
+    res.sendStatus(404);
+  }
+}
 
   /**
    * Returns the id that was transmitted via the URL, e.g. People('1').
