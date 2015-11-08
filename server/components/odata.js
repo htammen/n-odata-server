@@ -27,7 +27,19 @@ module.exports = function (loopbackApplication, options) {
       case 'POST':
         _handlePost(req, res);
         break;
+      // PUT is used to update an entity and to overwrite all property values with its default
+      // values if they are not submitted with the request. In other words it resets an entity and
+      // only sets the submitted properties
       case 'PUT':
+        _handlePut(req, res);
+        break;
+      // PATCH should be the preferred method to update an entity
+      case 'PATCH':
+        res.sendStatus(404);
+        break;
+      // MERGE is used in OData V2.0 to update an entity. This has been changed in
+      // in V4.0 to PATCH
+      case 'MERGE':
         res.sendStatus(404);
         break;
       case 'DELETE':
@@ -139,8 +151,7 @@ module.exports = function (loopbackApplication, options) {
     var ModelClass = _getModelClass(req.app, param0);
     if(ModelClass) {
       ModelClass.findById(id, function(err, instance) {
-        var result = {};
-        result = instance.toJSON();
+        var result = instance.toJSON();
         result['@odata.context'] = _getBaseURL(req) + '/odata/$metadata#' + collection + '/$entity';
         res.send(result);
       });
@@ -200,7 +211,6 @@ module.exports = function (loopbackApplication, options) {
 
     var models = req.app.models();
     models.forEach(function(model) {
-      var modelObj = {};
       var plural = _getPluralForModel(model);
       if(plural === reqParam) {
         retValue = true;
@@ -266,6 +276,60 @@ module.exports = function (loopbackApplication, options) {
   }
 
   /**
+   * handles the PUT request to the OData server. The PUT request is used to update an entity where
+   * only the submitted properties are set. All other properties are reset to their default values.
+   * Be aware that this could lead to data loss. If you only want to change the submitted properties
+   * and keep all other properties values use PATCH or MERGE (only OData V2.0).
+   * @param req
+   * @param res
+   * @private
+   */
+  function _handlePut(req, res) {
+    var ModelClass = _getModelClass(req.app, req.params[0]);
+
+    if(ModelClass) {
+      var id = _getIdFromUrlParameter(req.params[0]);
+      var reqObj = req.body;
+      // create an object that is saved to the db and set all properties from request body
+      // If not defined there set default value or undefined if no default has been defined
+      var updateObj = {};
+      ModelClass.forEachProperty(function(propName, property) {
+        if(reqObj[propName]) {
+          updateObj[propName] = reqObj[propName];
+        } else {
+          updateObj[propName] = property.default;
+        }
+      });
+
+      var idName = ModelClass.getIdName();
+      var whereObj = {};
+      whereObj[idName] = id;
+      // Here we use the static method updataAll. We could also have been read the entity
+      // and updated it with update
+      ModelClass.updateAll(whereObj, updateObj, function(err, results) {
+        if(err || results.count === 0) {
+          res.sendStatus(500);
+        } else {
+          res.sendStatus(204);
+        }
+      });
+    } else {
+      res.sendStatus(404);
+    }
+  }
+
+  /**
+   * Returns the id that was transmitted via the URL, e.g. People('1').
+   * In this case it extracts 1 as id.
+   * @param param0
+   * @returns {string}
+   * @private
+   */
+  function _getIdFromUrlParameter(param0) {
+    return param0.substring(param0.indexOf('(') + 2, param0.indexOf(')') - 1);
+  }
+
+  /**
    * handles the DELETE request of the OData server
    * @param req
    * @param res
@@ -274,8 +338,7 @@ module.exports = function (loopbackApplication, options) {
   function _handleDelete(req, res) {
     var param0 = req.params[0];
     // extract the id from the request
-    var id = param0.substring(param0.indexOf('(') +2, param0.indexOf(')')-1);
-    var collection = param0.substr(0, param0.indexOf('('));
+    var id = _getIdFromUrlParameter(param0);
     var ModelClass = _getModelClass(req.app, param0);
     if(ModelClass) {
       ModelClass.destroyById(id, function(err) {

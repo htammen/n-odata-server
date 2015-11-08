@@ -12,7 +12,19 @@ OData is a protocol for standardized access to [RESTful](https://en.wikipedia.or
 was developed by Microsoft as Open Source project. Not very much later SAP jumped onto the train. At the moment primarily Microsoft and SAP work on the [specification](https://www.oasis-open.org/committees/tc_home.php?wg_abbrev=odata) under the hood of OASIS.
 Since it's early days in 2009 a lot of other companies have committed their strategy to OData or at least support OData.
 To name a few there are IBM, Salesforce, Red Hat, CA, Citrix.
-If you are totally new to OData this [presentation](http://de.slideshare.net/metadaddy/odata-a-standard-api-for-data-access) might give you a quick inside into it.
+If you are totally new to OData this [presentation](http://de.slideshare.net/metadaddy/odata-a-standard-api-for-data-access)
+might give you a quick inside into it.
+
+### OData versions
+In the meantime the current version of Odata is 4.0. We will try to primarily support this version of OData. But
+because there are to us very important frontend frameworks like SAPUI5/OpenUI5 that still work on older versions we
+will also have these in mind at any time.
+
+### OData formats
+The OData specification suggests to support [Atom](http://docs.oasis-open.org/odata/odata-atom-format/v4.0/odata-atom-format-v4.0.html)
+as well as [JSON](http://docs.oasis-open.org/odata/odata-json-format/v4.0/odata-json-format-v4.0.html).
+One of these formats must be supported. We will probably only support the JSON format as it is much more lightweight and
+therefore easier to implement.
 
 ## Loopback
 This project relies on and requires [Loopback](http://loopback.io/) a very mature node.js framework for
