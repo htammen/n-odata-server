@@ -32,8 +32,11 @@ development of database independent node.js web applications. Our project extend
 with the ability to expose it's data via OData. Loopback already exposes the data via a proprietary RESTful API. If you are fine with this just use it. But if you want to base your projects on standards user OData and our loopback add-on.
 
 ## Current state of the project
-__At the moment we are at the absolute beginning. Either contribute to the project, be patient or have a look for the other solutions at the market.__
+__At the moment we are at the absolute beginning. Either contribute to the project, be patient or have a look for the
+other solutions at the market.__
 
-If you want to contribute send us an [email](mailto:h.tammen@tammen-it-solutions.de) to `h.tammen@tammen-it-solutions.de`. We are collaborating via a [Slack Team](https://slack.com/) and will invite you to this as soon as we receive a request for contribution.
+If you want to contribute send us an [email](mailto:h.tammen@tammen-it-solutions.de) to `h.tammen@tammen-it-solutions.de`.
+We are collaborating via a [Slack Team](https://slack.com/) and will invite you to this as soon as we receive a request for contribution.
+We manage our tasks via [Trello](https://trello.com). We will also authorize you to our Trello board if you want to contribute to the project.
 
 We have currently implemented some very basic OData functionality that allows you to use some basic CRUD operations on your data. We try to implement some more useful functionality soon.
