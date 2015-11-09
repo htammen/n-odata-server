@@ -1,11 +1,16 @@
 {
-  "name": "node_odata_server",
+  "name": "n-odata-server",
   "version": "0.0.1",
-  "main": "server/server.js",
+  "description": "OData server for loopback framework",
+  "main": "index.js",
   "scripts": {
     "pretest": "jshint ."
   },
   "dependencies": {
+
+  },
+  "devDependencies": {
+    "jshint": "^2.5.6",
     "body-parser": "^1.14.1",
     "compression": "^1.0.3",
     "cors": "^2.5.2",
@@ -15,12 +20,9 @@
     "loopback-datasource-juggler": "^2.39.0",
     "serve-favicon": "^2.0.1"
   },
-  "devDependencies": {
-    "jshint": "^2.5.6"
-  },
   "repository": {
-    "type": "",
-    "url": ""
+    "type": "git",
+    "url": "https://github.com/htammen/n-odata-server.git"
   },
-  "description": "hello-world"
+  "license": "MIT"
 }
