@@ -6,19 +6,21 @@
   "scripts": {
     "pretest": "jshint ."
   },
-  "dependencies": {
-
-  },
+  "dependencies": {},
   "devDependencies": {
     "jshint": "^2.5.6",
     "body-parser": "^1.14.1",
+    "chai": "^2.1.1",
     "compression": "^1.0.3",
     "cors": "^2.5.2",
     "loopback": "^2.22.0",
     "loopback-boot": "^2.6.5",
     "loopback-component-explorer": "^2.1.0",
     "loopback-datasource-juggler": "^2.39.0",
-    "serve-favicon": "^2.0.1"
+    "mocha": "^2.3.3",
+    "serve-favicon": "^2.0.1",
+    "sinon": "^1.13.0",
+    "supertest": "^0.15.0"
   },
   "repository": {
     "type": "git",
