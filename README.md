@@ -8,8 +8,10 @@ There are already some solutions at npm. These did not fulfill our requirements 
 * Support for nearly the complete OData API
 
 ## Current state of the project
-__At the moment we are at the absolute beginning. Either contribute to the project, be patient or have a look for the
-other solutions at the market.__
+__At the moment we are in an early state. Even though we are working hard we need some more time to have a version that
+supports most of the OData specification.
+If you need a solution that supports all or allmost all OData features either contribute to the project,
+be patient or have a look for the other solutions at the market.__
 
 If you want to contribute send us an email to [`h.tammen@tammen-it-solutions.de`](mailto:h.tammen@tammen-it-solutions.de).
 We are collaborating via a [Slack Team](https://slack.com/) and will invite you to this as soon as we receive a request for contribution.
@@ -65,7 +67,8 @@ of your project. Add the following line to this file
     "path": "/odata/*"
   }
 ```
-__At the moment the path has to be exactly `"/odata/*"`. This will be customizable in a future release.__
+If you are not happy with the prefix `odata` you can of course use another one. Just exchange `odata` with you prefix
+e.g. `myservice`. Then your requests to the odata service have to start with `/myservice/`.
 
 ### Firing OData requests
 To fire your OData request simply start your server application with
