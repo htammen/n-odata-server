@@ -19,6 +19,9 @@ We manage our tasks via [Trello](https://trello.com). We will also authorize you
 
 We have currently implemented some very basic OData functionality (see below) that allows you to use some basic CRUD operations on your data. We try to implement some more useful functionality soon.
 
+### Release Notes
+To see what's implemented yet have a look at our [release notes](https://github.com/htammen/n-odata-server/wiki/Release%20Notes)
+
 ## Background
 
 ### OData
