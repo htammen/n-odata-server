@@ -17,3 +17,5 @@
 coverage
 node_modules
 npm-debug.log
+.tscache
+*.js.map
