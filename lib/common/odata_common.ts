@@ -60,6 +60,7 @@ function _getBaseURL(req) {
  */
 function _getRequestType(req) {
 	var retValue = enums.GetRequestTypeEnum.UNDEFINED;
+	var param0 = new String(req.params[0]);
 	if(req.params[0] === '')
 		retValue = enums.GetRequestTypeEnum.SERVICE;
 	else {
@@ -67,6 +68,8 @@ function _getRequestType(req) {
 			retValue = enums.GetRequestTypeEnum.COLLECTION;
 		} else if(_isRequestEntity(req)) {
 			retValue = enums.GetRequestTypeEnum.ENTITY;
+		} else if(param0.toUpperCase() === "$METADATA") {
+			retValue = enums.GetRequestTypeEnum.METADATA;
 		} else {
 
 		}

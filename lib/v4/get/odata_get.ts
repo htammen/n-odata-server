@@ -1,10 +1,11 @@
-import constants = require('../constants/odata_constants');
-import enums = require('../constants/odata_enums');
-import commons = require('../common/odata_common');
-import req_header = require('../common/odata_req_header');
-import BaseRequestHandler = require('../base/BaseRequestHandler');
+/// <reference path="../../../typescript/declarations/node.d.ts" />
 
-var oDataServerConfig;
+import constants = require('../../constants/odata_constants');
+import enums = require('../../constants/odata_enums');
+import commons = require('../../common/odata_common');
+import req_header = require('../../common/odata_req_header');
+import BaseRequestHandler = require('../../base/BaseRequestHandler');
+import fs = require('fs');
 
 /**
  * A module for exporting common function that are used by several other
@@ -16,21 +17,11 @@ var oDataServerConfig;
 export class ODataGet extends BaseRequestHandler.BaseRequestHandler{
 	constructor() {super()};
 
-	setConfig(config) {
-		_setConfig.call(this, config)
-	};
-
 	handleGet(req, res) {
 		_handleGet.call(this, req, res);
 	}
 
 }
-
-
-function _setConfig(config) {
-	oDataServerConfig = config;
-}
-
 
 /**
  * handles the GET request to the OData server
@@ -50,6 +41,9 @@ function _handleGet(req, res) {
 		case enums.GetRequestTypeEnum.SERVICE:
 			_getServiceDocument(req, res);
 			break;
+		case enums.GetRequestTypeEnum.METADATA:
+			_getMetadataDocument(req, res);
+			break;
 		case enums.GetRequestTypeEnum.COLLECTION:
 			_getCollectionData(req, res);
 			break;
@@ -59,6 +53,52 @@ function _handleGet(req, res) {
 		default:
 			res.sendStatus(404);
 	}
+}
+
+
+function _getMetadataDocument(req, res) {
+	//var meta: string;
+	//fs.readFile('../metadata.xml', 'utf8', function (err,data) {
+	//	if (err) {
+	//		return console.log(err);
+	//	}
+	//	meta = data;
+	//});
+
+	var meta : string = `<?xml version="1.0" encoding="utf-8"?>
+<edmx:Edmx Version="1.0" xmlns:edmx="http://schemas.microsoft.com/ado/2007/06/edmx"
+					 xmlns:m="http://schemas.microsoft.com/ado/2007/08/dataservices/metadata"
+					 xmlns:sap="http://www.sap.com/Protocols/SAPData">
+	<edmx:DataServices m:DataServiceVersion="2.0">
+		<Schema Namespace="SAMPLEXX" xml:lang="de"
+						xmlns="http://schemas.microsoft.com/ado/2008/09/edm">
+			<EntityType Name="person" sap:content-version="1">
+				<Key>
+					<PropertyRef Name="id"/>
+				</Key>
+				<Property Name="id" Type="Edm.Int32" Nullable="false" sap:label="Person id"/>
+				<Property Name="firstname" Type="Edm.String" MaxLength="60" sap:label="Firstname"/>
+				<Property Name="lastname" Type="Edm.String" MaxLength="60" sap:label="Lastname"/>
+				<Property Name="gender" Type="Edm.String" sap:label="Gender (m/f)"/>
+				<Property Name="age" Type="Edm.Int32" sap:label="Age in years"/>
+			</EntityType>
+			<EntityContainer Name="SAMPLEXX" m:IsDefaultEntityContainer="true">
+				<EntitySet Name="people" EntityType="SAMPLEXX.person" sap:content-version="1"/>
+			</EntityContainer>
+			<!--
+			<atom:link rel="self" href="https://sapes1.sapdevcenter.com:443/sap/opu/odata/sap/SALESORDERXX/$metadata"
+								 xmlns:atom="http://www.w3.org/2005/Atom"/>
+			<atom:link rel="latest-version"
+								 href="https://sapes1.sapdevcenter.com:443/sap/opu/odata/sap/SALESORDERXX/$metadata"
+								 xmlns:atom="http://www.w3.org/2005/Atom"/>
+			-->
+		</Schema>
+	</edmx:DataServices>
+</edmx:Edmx>
+`
+	res.set('Content-Type', 'application/xml');
+	res.send(meta);
+
 }
 
 /**
@@ -137,8 +177,8 @@ function _getCollectionData(req, res) {
 			}
 			// adjust the number of records that are returned according to the maxpagesize setting, either by client
 			// or by the server application
-			if (!filter.limit || filter.limit > oDataServerConfig.maxpagesize || (_maxpagesize && filter.limit > _maxpagesize)) {
-				var tmpMaxSize = oDataServerConfig.maxpagesize;
+			if (!filter.limit || filter.limit > this.oDataServerConfig.maxpagesize || (_maxpagesize && filter.limit > _maxpagesize)) {
+				var tmpMaxSize = this.oDataServerConfig.maxpagesize;
 				if (_maxpagesize && tmpMaxSize && parseInt(_maxpagesize) < parseInt(tmpMaxSize)) {
 					tmpMaxSize = _maxpagesize;
 				}

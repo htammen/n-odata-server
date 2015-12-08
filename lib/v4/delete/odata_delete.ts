@@ -1,5 +1,5 @@
-import commons = require('../common/odata_common');
-import BaseRequestHandler = require('../base/BaseRequestHandler');
+import commons = require('../../common/odata_common');
+import BaseRequestHandler = require('../../base/BaseRequestHandler');
 
 /**
  * A module for exporting DELETE functions of the odata-server

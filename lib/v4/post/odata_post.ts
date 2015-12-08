@@ -1,5 +1,5 @@
-import commons = require('../common/odata_common');
-import BaseRequestHandler = require('../base/BaseRequestHandler');
+import commons = require('../../common/odata_common');
+import BaseRequestHandler = require('../../base/BaseRequestHandler');
 
 /**
  * A module for exporting common function that are used by several other
