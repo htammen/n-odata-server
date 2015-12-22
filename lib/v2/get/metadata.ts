@@ -16,8 +16,7 @@ function buildMetadata(models) {
 	models.forEach(function (model) {
 
 			var entityTypeObj: any = {
-					"@Name": model.definition.name,
-					"@sap:content-version": "1"
+					"@Name": model.definition.name
 			};
 
 			var arrProps: Array<Object> = [];
@@ -47,8 +46,7 @@ function buildMetadata(models) {
 			// Create EntitySet for EntityType
 			var entitySetObj: any = {
 				"@Name": commons.getPluralForModel(model),
-				"@EntityType": constants.ODATA_NAMESPACE + '.' + model.definition.name,
-				"@sap:content-version": "1"
+				"@EntityType": constants.ODATA_NAMESPACE + '.' + model.definition.name
 			};
 			EntitySet.push(entitySetObj);
 		}
