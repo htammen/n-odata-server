@@ -137,93 +137,94 @@ function _getServiceDocument(req, res) {
  */
 function _getCollectionData(req, res) {
 	//DONE: The odata.nextLink annotation MUST be included in a response that represents a partial result. "@odata.nextLink": "...?$skiptoken=342r89"
-	var ModelClass = commons.getModelClass(req.app, req.params[0]);
-	if (ModelClass) {
-		// Retrieve odata.maxpagesize from Prefer header of the request
-		var _maxpagesize;
-		var reqHeaderArr = req_header.getPreferHeader(req);
-		reqHeaderArr.forEach(function (obj, idx, arr) {
-			if (obj[0] === 'maxpagesize') {
-				_maxpagesize = obj[1];
-			}
-		});
+	commons.getModelClass(req.app, req.params[0]).then((ModelClass: any) => {
+		if (ModelClass) {
+			// Retrieve odata.maxpagesize from Prefer header of the request
+			var _maxpagesize;
+			var reqHeaderArr = req_header.getPreferHeader(req);
+			reqHeaderArr.forEach(function (obj, idx, arr) {
+				if (obj[0] === 'maxpagesize') {
+					_maxpagesize = obj[1];
+				}
+			});
 
-		var filter: any = {};
-		//TODO: apply $filter parameter
-		//TODO: apply $search parameter
+			var filter:any = {};
+			//TODO: apply $filter parameter
+			//TODO: apply $search parameter
 
-		// if user appended the $count parameter she just wants the number of records
-		// after filter and search has been applied
-		if (req.query.$count !== undefined) {
-			if (req.accepts("text/plain")) {
-				ModelClass.count(function (err, count) {
-					res.set('Content-Type', 'text/plain');
-					res.send(count.toString());
-				})
+			// if user appended the $count parameter she just wants the number of records
+			// after filter and search has been applied
+			if (req.query.$count !== undefined) {
+				if (req.accepts("text/plain")) {
+					ModelClass.count(function (err, count) {
+						res.set('Content-Type', 'text/plain');
+						res.send(count.toString());
+					})
+				} else {
+					res.sendStatus(415)
+				}
 			} else {
-				res.sendStatus(415)
+				// here we do the main work if the user wants data from a collection
+				var nextLink;
+
+				// retrieve only top=xx records
+				if (req.query.$top) {
+					filter.limit = req.query.$top;
+				}
+				// the implementation of $skiptoken is service specific. We define that $skiptoken behaves like $skip
+				if (req.query.$skip || req.query.$skiptoken) {
+					filter.skip = req.query.$skip || req.query.$skiptoken;
+				}
+				// adjust the number of records that are returned according to the maxpagesize setting, either by client
+				// or by the server application
+				if (!filter.limit || filter.limit > this.oDataServerConfig.maxpagesize || (_maxpagesize && filter.limit > _maxpagesize)) {
+					var tmpMaxSize = this.oDataServerConfig.maxpagesize;
+					if (_maxpagesize && tmpMaxSize && parseInt(_maxpagesize) < parseInt(tmpMaxSize)) {
+						tmpMaxSize = _maxpagesize;
+					}
+					// if limit has not been set yet we have to add a nextLink property to the response to enable the user to automatically
+					// page to the next chunk of data
+					if (!filter.limit) {
+						var _skiptoken:number = req.query.$skiptoken;
+						_skiptoken = (!isNaN(_skiptoken) ? _skiptoken + parseInt(tmpMaxSize) : parseInt(tmpMaxSize));
+						nextLink = commons.getBaseURL(req) + '/' + commons.getPluralForModel(ModelClass) + '?$skiptoken=' + _skiptoken;
+						// if nextLink is set, means we deliver partially response, we need to know if there would be more data
+						// if the nextLink is processed. If the current data chunk is the last one we MUST NOT set the nextLink into
+						// the response
+						if (nextLink) {
+							var nlFilter:any = {};
+							nlFilter.skip = _skiptoken;
+							nlFilter.limit = 1;	// just need to test if there is at least one more record
+							ModelClass.find(nlFilter, function (err, data) {
+								if (data.length === 0) {
+									nextLink = undefined;
+								}
+							});
+						}
+
+						// set the filter limit to the calculated maxSize
+						filter.limit = tmpMaxSize;
+						res.set('Preference-Applied', 'odata.maxpagesize=' + tmpMaxSize);
+					}
+				}
+
+				// apply $select URL parameter
+				filter = _applySelect(req, filter);
+
+				// Now we call the find method of the ModelClass with filter definition
+				ModelClass.find(filter, function (err, data) {
+					var result:any = {};
+					if (nextLink) {
+						result['@odata.netxtLink'] = nextLink;
+					}
+					result.value = data;
+					res.send(result);
+				});
 			}
 		} else {
-			// here we do the main work if the user wants data from a collection
-			var nextLink;
-
-			// retrieve only top=xx records
-			if (req.query.$top) {
-				filter.limit = req.query.$top;
-			}
-			// the implementation of $skiptoken is service specific. We define that $skiptoken behaves like $skip
-			if (req.query.$skip || req.query.$skiptoken) {
-				filter.skip = req.query.$skip || req.query.$skiptoken;
-			}
-			// adjust the number of records that are returned according to the maxpagesize setting, either by client
-			// or by the server application
-			if (!filter.limit || filter.limit > this.oDataServerConfig.maxpagesize || (_maxpagesize && filter.limit > _maxpagesize)) {
-				var tmpMaxSize = this.oDataServerConfig.maxpagesize;
-				if (_maxpagesize && tmpMaxSize && parseInt(_maxpagesize) < parseInt(tmpMaxSize)) {
-					tmpMaxSize = _maxpagesize;
-				}
-				// if limit has not been set yet we have to add a nextLink property to the response to enable the user to automatically
-				// page to the next chunk of data
-				if (!filter.limit) {
-					var _skiptoken: number = req.query.$skiptoken;
-					_skiptoken = (!isNaN(_skiptoken) ? _skiptoken + parseInt(tmpMaxSize) : parseInt(tmpMaxSize));
-					nextLink = commons.getBaseURL(req) + '/' + commons.getPluralForModel(ModelClass) + '?$skiptoken=' + _skiptoken;
-					// if nextLink is set, means we deliver partially response, we need to know if there would be more data
-					// if the nextLink is processed. If the current data chunk is the last one we MUST NOT set the nextLink into
-					// the response
-					if (nextLink) {
-						var nlFilter: any = {};
-						nlFilter.skip = _skiptoken;
-						nlFilter.limit = 1;	// just need to test if there is at least one more record
-						ModelClass.find(nlFilter, function (err, data) {
-							if (data.length === 0) {
-								nextLink = undefined;
-							}
-						});
-					}
-
-					// set the filter limit to the calculated maxSize
-					filter.limit = tmpMaxSize;
-					res.set('Preference-Applied', 'odata.maxpagesize=' + tmpMaxSize);
-				}
-			}
-
-			// apply $select URL parameter
-			filter = _applySelect(req, filter);
-
-			// Now we call the find method of the ModelClass with filter definition
-			ModelClass.find(filter, function (err, data) {
-				var result: any = {};
-				if (nextLink) {
-					result['@odata.netxtLink'] = nextLink;
-				}
-				result.value = data;
-				res.send(result);
-			});
+			res.sendStatus(404);
 		}
-	} else {
-		res.sendStatus(404);
-	}
+	});
 }
 
 /**
@@ -237,29 +238,30 @@ function _getEntityData(req, res) {
 	// extract the id from the request
 	var id = commons.getIdFromUrlParameter(param0);
 	var collection = param0.substr(0, param0.indexOf('('));
-	var ModelClass = commons.getModelClass(req.app, param0);
-	if (ModelClass) {
-		// apply $select URL parameter
-		var filter = _applySelect(req);
+	commons.getModelClass(req.app, param0).then((ModelClass: any) => {
+		if (ModelClass) {
+			// apply $select URL parameter
+			var filter = _applySelect(req);
 
-		ModelClass.findById(id, filter, function (err, instance) {
-			if (err) {
-				console.error(err.toString());
-				res.sendStatus(500);
-			} else {
-				if (instance) {
-					var result = instance.toJSON();
-					result['@odata.context'] = commons.getBaseURL(req) + '/$metadata#' + collection + '/$entity';
-					res.send(result);
+			ModelClass.findById(id, filter, function (err, instance) {
+				if (err) {
+					console.error(err.toString());
+					res.sendStatus(500);
 				} else {
-					console.error('entity data for request ' + req.originalUrl + ' was not found');
-					res.sendStatus(404);
+					if (instance) {
+						var result = instance.toJSON();
+						result['@odata.context'] = commons.getBaseURL(req) + '/$metadata#' + collection + '/$entity';
+						res.send(result);
+					} else {
+						console.error('entity data for request ' + req.originalUrl + ' was not found');
+						res.sendStatus(404);
+					}
 				}
-			}
-		});
-	} else {
-		res.sendStatus(404);
-	}
+			});
+		} else {
+			res.sendStatus(404);
+		}
+	});
 }
 
 

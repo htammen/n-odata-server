@@ -1,3 +1,4 @@
+/// <reference path="../../typescript/declarations/es6-promise.d.ts" />
 import constants = require('../constants/odata_constants');
 import enums = require('../constants/odata_enums');
 
@@ -155,35 +156,37 @@ function _getIdFromUrlParameter(param0) {
  * @return {[type]}                [description]
  */
 function _getModelClass(app, className) {
-	var ModelClass;
+	return new Promise((resolve, reject) => {
+		var ModelClass;
 
-	if(className.indexOf('(') !== -1) {
-		// its a request for a single entity object
-		className = className.substr(0, className.indexOf('('));
-	} else {
-		// Try to get the singular class first
-		ModelClass = app.models[className];
-	}
+		if(className.indexOf('(') !== -1) {
+			// its a request for a single entity object
+			className = className.substr(0, className.indexOf('('));
+		} else {
+			// Try to get the singular class first
+			ModelClass = app.models[className];
+		}
 
-	// Now try to get the class by it's plural definition
-	// In this case its a collection
-	if(!ModelClass) {
-		var models = app.models();
-		models.forEach(function(model) {
-			if(model.definition.settings.plural === className) {
-				ModelClass = model;
-				return;
-			} else {
-				var plural = model.definition.name + 's';
-				if(plural === className) {
+		// Now try to get the class by it's plural definition
+		// In this case its a collection
+		if(!ModelClass) {
+			var models = app.models();
+			models.forEach(function(model) {
+				if(model.definition.settings.plural === className) {
 					ModelClass = model;
-					return;
+					return;  // return from forEach
+				} else {
+					var plural = model.definition.name + 's';
+					if(plural === className) {
+						ModelClass = model;
+						return;	// return from forEach
+					}
 				}
-			}
-		});
-	}
+			});
+		}
 
-	return ModelClass;
+		resolve( ModelClass );
+	})
 }
 
 

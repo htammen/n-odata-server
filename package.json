@@ -1,12 +1,14 @@
 {
   "name": "n-odata-server",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "OData server for loopback framework",
   "main": "index.js",
   "scripts": {
     "pretest": "jshint ."
   },
-  "dependencies": {},
+  "dependencies": {
+    "xmlbuilder": "^4.1.0"
+  },
   "devDependencies": {
     "body-parser": "^1.14.1",
     "chai": "^2.1.1",

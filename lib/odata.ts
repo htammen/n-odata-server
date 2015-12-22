@@ -15,6 +15,8 @@ import ODataPutV4 = require('./v4/put/odata_put');
 import ODataDeleteV4 = require('./v4/delete/odata_delete');
 // OData V2
 import ODataGetV2 = require('./v2/get/odata_get');
+import ODataPostV2 = require('./v2/post/odata_post');
+import ODataDeleteV2 = require('./v2/delete/odata_delete');
 
 var oDataServerConfig;
 
@@ -58,6 +60,8 @@ export = function (loopbackApplication, options) {
  */
 function _handleODataVersion2(loopbackApplication, options, oDataServerConfig) {
 	this.oDataGet = new ODataGetV2.ODataGet();
+	this.oDataPost = new ODataPostV2.ODataPost();
+	this.oDataDelete = new ODataDeleteV2.ODataDelete();
 
 	common.setConfig(oDataServerConfig);
 	this.oDataGet.setConfig(oDataServerConfig);
@@ -67,9 +71,9 @@ function _handleODataVersion2(loopbackApplication, options, oDataServerConfig) {
 			case 'GET':
 				_handleGet.call(this, req, res);
 				break;
-			//case 'POST':
-			//	_handlePost.call(this, req, res);
-			//	break;
+			case 'POST':
+				_handlePost.call(this, req, res);
+				break;
 			//// PUT is used to update an entity and to overwrite all property values with its default
 			//// values if they are not submitted with the request. In other words it resets an entity and
 			//// only sets the submitted properties
@@ -85,9 +89,9 @@ function _handleODataVersion2(loopbackApplication, options, oDataServerConfig) {
 			//case 'MERGE':
 			//	_handlePATCH.call(this, req, res);
 			//	break;
-			//case 'DELETE':
-			//	_handleDelete.call(this, req, res);
-			//	break;
+			case 'DELETE':
+				_handleDelete.call(this, req, res);
+				break;
 			default:
 				res.sendStatus(404);
 				break;
