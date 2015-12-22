@@ -36,37 +36,38 @@ function _handlePut(req, res) {
 	// set OData-Version in response header
 	this.setODataVersion(res);
 
-	var ModelClass = commons.getModelClass(req.app, req.params[0]);
+	commons.getModelClass(req.app, req.params[0]).then((ModelClass: any) => {
 
-	if(ModelClass) {
-		var id = commons.getIdFromUrlParameter(req.params[0]);
-		var reqObj = req.body;
-		// create an object that is saved to the db and set all properties from request body
-		// If not defined there set default value or undefined if no default has been defined
-		var updateObj = {};
-		ModelClass.forEachProperty(function(propName, property) {
-			if(reqObj[propName]) {
-				updateObj[propName] = reqObj[propName];
-			} else {
-				updateObj[propName] = property.default;
-			}
-		});
+		if (ModelClass) {
+			var id = commons.getIdFromUrlParameter(req.params[0]);
+			var reqObj = req.body;
+			// create an object that is saved to the db and set all properties from request body
+			// If not defined there set default value or undefined if no default has been defined
+			var updateObj = {};
+			ModelClass.forEachProperty(function (propName, property) {
+				if (reqObj[propName]) {
+					updateObj[propName] = reqObj[propName];
+				} else {
+					updateObj[propName] = property.default;
+				}
+			});
 
-		var idName = ModelClass.getIdName();
-		var whereObj = {};
-		whereObj[idName] = id;
-		// Here we use the static method updataAll. We could also have been read the entity
-		// and updated it with update
-		ModelClass.updateAll(whereObj, updateObj, function(err, results) {
-			if(err || results.count === 0) {
-				res.sendStatus(500);
-			} else {
-				res.sendStatus(204);
-			}
-		});
-	} else {
-		res.sendStatus(404);
-	}
+			var idName = ModelClass.getIdName();
+			var whereObj = {};
+			whereObj[idName] = id;
+			// Here we use the static method updataAll. We could also have been read the entity
+			// and updated it with update
+			ModelClass.updateAll(whereObj, updateObj, function (err, results) {
+				if (err || results.count === 0) {
+					res.sendStatus(500);
+				} else {
+					res.sendStatus(204);
+				}
+			});
+		} else {
+			res.sendStatus(404);
+		}
+	});
 }
 
 /**
@@ -80,34 +81,35 @@ function _handlePatch(req, res) {
 	// set OData-Version in response header
 	this.setODataVersion(res);
 
-	var ModelClass = commons.getModelClass(req.app, req.params[0]);
+	commons.getModelClass(req.app, req.params[0]).then((ModelClass: any) => {
 
-	if(ModelClass) {
-		var id = commons.getIdFromUrlParameter(req.params[0]);
-		var reqObj = req.body;
-		// create an object that is saved to the db and set all properties from request body
-		// If not defined there set default value or undefined if no default has been defined
-		var updateObj = {};
-		ModelClass.forEachProperty(function(propName, property) {
-			if(reqObj[propName]) {
-				updateObj[propName] = reqObj[propName];
-			}
-		});
+		if (ModelClass) {
+			var id = commons.getIdFromUrlParameter(req.params[0]);
+			var reqObj = req.body;
+			// create an object that is saved to the db and set all properties from request body
+			// If not defined there set default value or undefined if no default has been defined
+			var updateObj = {};
+			ModelClass.forEachProperty(function (propName, property) {
+				if (reqObj[propName]) {
+					updateObj[propName] = reqObj[propName];
+				}
+			});
 
-		var idName = ModelClass.getIdName();
-		var whereObj = {};
-		whereObj[idName] = id;
-		// Here we use the static method updataAll. We could also have been read the entity
-		// and updated it with update
-		ModelClass.updateAll(whereObj, updateObj, function(err, results) {
-			if(err || results.count === 0) {
-				res.sendStatus(500);
-			} else {
-				res.sendStatus(204);
-			}
-		});
-	} else {
-		res.sendStatus(404);
-	}
+			var idName = ModelClass.getIdName();
+			var whereObj = {};
+			whereObj[idName] = id;
+			// Here we use the static method updataAll. We could also have been read the entity
+			// and updated it with update
+			ModelClass.updateAll(whereObj, updateObj, function (err, results) {
+				if (err || results.count === 0) {
+					res.sendStatus(500);
+				} else {
+					res.sendStatus(204);
+				}
+			});
+		} else {
+			res.sendStatus(404);
+		}
+	});
 }
 

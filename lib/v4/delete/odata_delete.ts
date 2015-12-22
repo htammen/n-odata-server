@@ -30,16 +30,17 @@ function _handleDelete(req, res) {
 	var param0 = req.params[0];
 	// extract the id from the request
 	var id = commons.getIdFromUrlParameter(param0);
-	var ModelClass = commons.getModelClass(req.app, param0);
-	if(ModelClass) {
-		ModelClass.destroyById(id, function(err) {
-			if(!err) {
-				res.sendStatus(204);
-			} else {
-				res.sendStatus(500);
-			}
-		});
-	} else {
-		res.sendStatus(404);
-	}
+	commons.getModelClass(req.app, param0).then((ModelClass: any) => {
+		if(ModelClass) {
+			ModelClass.destroyById(id, function(err) {
+				if(!err) {
+					res.sendStatus(204);
+				} else {
+					res.sendStatus(500);
+				}
+			});
+		} else {
+			res.sendStatus(404);
+		}
+	});
 }

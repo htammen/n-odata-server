@@ -28,22 +28,23 @@ function _handlePost(req, res) {
 	// set OData-Version in response header
 	this.setODataVersion(res);
 
-	var ModelClass = commons.getModelClass(req.app, req.params[0]);
+	commons.getModelClass(req.app, req.params[0]).then((ModelClass: any) => {
 
-	if(ModelClass) {
-		var readLocation = commons.getBaseURL(req) + ModelClass.definition.settings.plural;
-		ModelClass.create(req.body, function(err, obj) {
-			if(err || obj === null) {
-				res.sendStatus(500);
-			} else {
-				// set location header to update or read URL
-				res.location(readLocation + '(\'' + obj.id + '\')');
-				// status must be 201
-				res.sendStatus(201);
-			}
-		});
-	} else {
-		res.sendStatus(404);
-	}
+		if (ModelClass) {
+			var readLocation = commons.getBaseURL(req) + ModelClass.definition.settings.plural;
+			ModelClass.create(req.body, function (err, obj) {
+				if (err || obj === null) {
+					res.sendStatus(500);
+				} else {
+					// set location header to update or read URL
+					res.location(readLocation + '(\'' + obj.id + '\')');
+					// status must be 201
+					res.sendStatus(201);
+				}
+			});
+		} else {
+			res.sendStatus(404);
+		}
+	});
 }
 
