@@ -28,7 +28,7 @@ export = function (loopbackApplication, options) {
 	// save the options defined in a local variable
 	oDataServerConfig = options || {};
 	// if not defined set a default value for server-side paging
-	if(!oDataServerConfig.maxpagesize) {
+	if (!oDataServerConfig.maxpagesize) {
 		oDataServerConfig.maxpagesize = constants.ODATA_MAXPAGESIZE;
 	}
 
@@ -36,13 +36,13 @@ export = function (loopbackApplication, options) {
 	var _pathArr = options.path.split('/');
 	oDataServerConfig.odataPrefix = _pathArr[1];
 
-	if(!oDataServerConfig.odataversion) {
+	if (!oDataServerConfig.odataversion) {
 		oDataServerConfig.odataversion = "4";
 	}
 
-	if(oDataServerConfig.odataversion === "4") {
+	if (oDataServerConfig.odataversion === "4") {
 		_handleODataVersion4.call(this, loopbackApplication, options, oDataServerConfig);
-	} else if(oDataServerConfig.odataversion === "2") {
+	} else if (oDataServerConfig.odataversion === "2") {
 		_handleODataVersion2.call(this, loopbackApplication, options, oDataServerConfig);
 	} else {
 		console.log("odata version " + oDataServerConfig.odataversion + " not supported yet");
@@ -67,34 +67,39 @@ function _handleODataVersion2(loopbackApplication, options, oDataServerConfig) {
 	this.oDataGet.setConfig(oDataServerConfig);
 
 	loopbackApplication.use(options.path, function (req, res, next) {
-		switch (req.method) {
-			case 'GET':
-				_handleGet.call(this, req, res);
-				break;
-			case 'POST':
-				_handlePost.call(this, req, res);
-				break;
-			//// PUT is used to update an entity and to overwrite all property values with its default
-			//// values if they are not submitted with the request. In other words it resets an entity and
-			//// only sets the submitted properties
-			//case 'PUT':
-			//	_handlePut.call(this, req, res);
-			//	break;
-			//// PATCH should be the preferred method to update an entity
-			//case 'PATCH':
-			//	_handlePATCH.call(this, req, res);
-			//	break;
-			//// MERGE is used in OData V2.0 to update an entity. This has been changed in
-			//// in V4.0 to PATCH
-			//case 'MERGE':
-			//	_handlePATCH.call(this, req, res);
-			//	break;
-			case 'DELETE':
-				_handleDelete.call(this, req, res);
-				break;
-			default:
-				res.sendStatus(404);
-				break;
+		try {
+			switch (req.method) {
+				case 'GET':
+					_handleGet.call(this, req, res);
+					break;
+				case 'POST':
+					_handlePost.call(this, req, res);
+					break;
+				//// PUT is used to update an entity and to overwrite all property values with its default
+				//// values if they are not submitted with the request. In other words it resets an entity and
+				//// only sets the submitted properties
+				//case 'PUT':
+				//	_handlePut.call(this, req, res);
+				//	break;
+				//// PATCH should be the preferred method to update an entity
+				//case 'PATCH':
+				//	_handlePATCH.call(this, req, res);
+				//	break;
+				//// MERGE is used in OData V2.0 to update an entity. This has been changed in
+				//// in V4.0 to PATCH
+				//case 'MERGE':
+				//	_handlePATCH.call(this, req, res);
+				//	break;
+				case 'DELETE':
+					_handleDelete.call(this, req, res);
+					break;
+				default:
+					res.sendStatus(404);
+					break;
+			}
+		} catch (e) {
+			console.log(e);
+			res.sendStatus(500);
 		}
 	});
 }
@@ -118,34 +123,39 @@ function _handleODataVersion4(loopbackApplication, options, oDataServerConfig) {
 	this.oDataGet.setConfig(oDataServerConfig);
 
 	loopbackApplication.use(options.path, function (req, res, next) {
-		switch (req.method) {
-			case 'GET':
-				_handleGet.call(this, req, res);
-				break;
-			case 'POST':
-				_handlePost.call(this, req, res);
-				break;
-			// PUT is used to update an entity and to overwrite all property values with its default
-			// values if they are not submitted with the request. In other words it resets an entity and
-			// only sets the submitted properties
-			case 'PUT':
-				_handlePut.call(this, req, res);
-				break;
-			// PATCH should be the preferred method to update an entity
-			case 'PATCH':
-				_handlePATCH.call(this, req, res);
-				break;
-			// MERGE is used in OData V2.0 to update an entity. This has been changed in
-			// in V4.0 to PATCH
-			case 'MERGE':
-				_handlePATCH.call(this, req, res);
-				break;
-			case 'DELETE':
-				_handleDelete.call(this, req, res);
-				break;
-			default:
-				res.sendStatus(404);
-				break;
+		try {
+			switch (req.method) {
+				case 'GET':
+					_handleGet.call(this, req, res);
+					break;
+				case 'POST':
+					_handlePost.call(this, req, res);
+					break;
+				// PUT is used to update an entity and to overwrite all property values with its default
+				// values if they are not submitted with the request. In other words it resets an entity and
+				// only sets the submitted properties
+				case 'PUT':
+					_handlePut.call(this, req, res);
+					break;
+				// PATCH should be the preferred method to update an entity
+				case 'PATCH':
+					_handlePATCH.call(this, req, res);
+					break;
+				// MERGE is used in OData V2.0 to update an entity. This has been changed in
+				// in V4.0 to PATCH
+				case 'MERGE':
+					_handlePATCH.call(this, req, res);
+					break;
+				case 'DELETE':
+					_handleDelete.call(this, req, res);
+					break;
+				default:
+					res.sendStatus(404);
+					break;
+			}
+		} catch (e) {
+			console.log(e);
+			res.sendStatus(500);
 		}
 	});
 }

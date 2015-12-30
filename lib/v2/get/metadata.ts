@@ -25,7 +25,7 @@ function buildMetadata(models) {
 
 				// exclude deprecated properties
 				if (property.deprecated !== true) {
-					var edmType:String = _convertType(property.type.name);
+					var edmType:String = _convertType(property);
 					edmType = edmType || property.type.name;
 					arrProps.push({"@Name": propName, "@Type": edmType});
 				}
@@ -52,6 +52,7 @@ function buildMetadata(models) {
 		}
 	);
 
+	//TODO: create metadata for complexTypes
 	//for (var typeKey in model.complexTypes) {
 	//	var complexType = {
 	//		"ComplexType": {
@@ -97,11 +98,12 @@ function buildMetadata(models) {
 
 /**
  * converts a loopback datatype into a OData datatype
- * @param dbType, loopback datatype
+ * @param property, loopback property
  * @private
  */
-function _convertType(dbType): String {
+function _convertType(property: any): String {
 	var retValue: String;
+	var dbType = property.type.name;
 	switch (dbType) {
 		case "String":
 			retValue = "Edm.String";
@@ -112,7 +114,11 @@ function _convertType(dbType): String {
 			break;
 
 		case "Number":
-			retValue = "Edm.Decimal"
+			if(property.id) {
+				retValue = "Edm.Int32"
+			} else {
+				retValue = "Edm.Decimal"
+			}
 			break;
 
 		case "Boolean":
