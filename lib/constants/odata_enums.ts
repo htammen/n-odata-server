@@ -9,6 +9,7 @@ var _GetRequestTypeEnum = {
 	COLLECTION: 1,
 	ENTITY: 2,
 	METADATA: 3,
+	COLLECTION_COUNT: 4,
 	UNDEFINED: 999
 };
 

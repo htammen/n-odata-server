@@ -42,35 +42,38 @@ function _getBaseURL(req) {
 /**
  * Retrieve the odata-type of the request. That means for a GET-request
  * if it's a
- * Service Document
- * Collection of Entities
- * Entity
- * Singleton
- * Collection of Derived Entities
- * Derived Entity
- * Collection of Entity References
- * Entity Reference
- * Property Value                 | http://host/service/Customers(1)/Addresses
- * Collection of Complex or Primitive Types
+ * - Service Document
+ * - Collection of Entities
+ * - Entity
+ * - Singleton
+ * - Collection of Derived Entities
+ * - Derived Entity
+ * - Collection of Entity References
+ * - Entity Reference
+ * - Property Value                 | http://host/service/Customers(1)/Addresses
+ * - Collection of Complex or Primitive Types
  * 																| http://host/service/TopFiveHobbies()
- * Complex or Primitive Typ       | http://host/service/MostPopularName()
- * Operation Result               | http://host/service/TopFiveCustomers{}
+ * - Complex or Primitive Typ       | http://host/service/MostPopularName()
+ * - Operation Result               | http://host/service/TopFiveCustomers{}
  *
  * @param  {[type]} req [description]
  * @return {[type]}     [description]
  */
 function _getRequestType(req) {
 	var retValue = enums.GetRequestTypeEnum.UNDEFINED;
-	var param0 = new String(req.params[0]);
+	var param0: string = req.params[0];
 	if(req.params[0] === '')
 		retValue = enums.GetRequestTypeEnum.SERVICE;
 	else {
-		if(_isRequestCollection(req)) {
+		var arrParams: string[] = param0.split('/');
+		if(param0.toUpperCase() === "$METADATA") {
+			retValue = enums.GetRequestTypeEnum.METADATA;
+		}	else if(arrParams[arrParams.length-1] === '$count') {
+			retValue = enums.GetRequestTypeEnum.COLLECTION_COUNT;
+		} else if(_isRequestCollection(req)) {
 			retValue = enums.GetRequestTypeEnum.COLLECTION;
 		} else if(_isRequestEntity(req)) {
 			retValue = enums.GetRequestTypeEnum.ENTITY;
-		} else if(param0.toUpperCase() === "$METADATA") {
-			retValue = enums.GetRequestTypeEnum.METADATA;
 		} else {
 
 		}

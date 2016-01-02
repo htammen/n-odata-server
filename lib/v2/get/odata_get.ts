@@ -48,9 +48,22 @@ export class ODataGet extends ODataGetBase.ODataGetBase{
 					res.sendStatus(500);
 				})
 				break;
+
 			case enums.GetRequestTypeEnum.METADATA:
 				_getMetadataDocument.call(this, req, res);
 				break;
+
+			case enums.GetRequestTypeEnum.COLLECTION_COUNT:
+				/* retrieve the number of records for a collection */
+				super._getCollectionCount(req, res).then( (collectionCount: number) => {
+					res.set('Content-Type', 'text/plain');
+					res.send(collectionCount.toString());
+				}, (error) => {
+					console.error(error);
+					res.status(500).send(error.toString());
+				});
+				break;
+
 			case enums.GetRequestTypeEnum.COLLECTION:
 				/* get a collection as result set */
 				super._getCollectionData(req, res).then( (collectionResult: CollectionResult) => {
@@ -62,6 +75,7 @@ export class ODataGet extends ODataGetBase.ODataGetBase{
 				});
 				//_getCollectionData.call(this, req, res);
 				break;
+
 			case enums.GetRequestTypeEnum.ENTITY:
 				super._getEntityData(req, res).then((entityResult: EntityResult) => {
 					var result: any = entityResult.getRequestResult();
@@ -71,6 +85,7 @@ export class ODataGet extends ODataGetBase.ODataGetBase{
 					res.sendStatus(500);
 				});
 				break;
+
 			default:
 				res.sendStatus(404);
 		}

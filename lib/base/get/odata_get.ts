@@ -307,6 +307,37 @@ export class ODataGetBase extends BaseRequestHandler.BaseRequestHandler {
 	};
 
 	/**
+	 * Retrieves the total number of records for a collection in the data store
+	 * @param req
+	 * @param res
+	 * @returns {Promise}
+     * @private
+     */
+	_getCollectionCount(req, res) {
+		return new Promise((resolve, reject) => {
+			var arrParams0 = req.params[0].split('/');
+			if (arrParams0 && arrParams0[arrParams0.length - 1] === '$count') {
+				// the collection has to be in the first part of params
+				commons.getModelClass(req.app, arrParams0[0]).then((ModelClass:any) => {
+					if (ModelClass) {
+						if (req.accepts("text/plain")) {
+							ModelClass.count().then(function (count) {
+								resolve(count);
+							})
+						} else {
+							reject(415);
+						}
+					}
+				})
+			} else {
+				reject(Error("bad request"));
+			}
+		})
+	};
+
+
+
+	/**
 	 * Get the data for exactly one object of an entity type
 	 * @param req
 	 * @param res
