@@ -33,9 +33,9 @@ If you are totally new to OData this [presentation](http://de.slideshare.net/met
 might give you a quick inside into it.
 
 #### OData versions
-In the meantime the current version of Odata is 4.0. We will try to primarily support this version of OData. But
-because there are to us very important frontend frameworks like SAPUI5/OpenUI5 that still work on older versions we
-will also have these in mind at any time.
+In the meantime the current version of Odata is 4.0. We will try to support this version. But
+because we primarily are interested in using our server with the frontend framework SAPUI5/OpenUI5 which still works
+on V2 we will support version 2.0 at first.
 
 #### OData formats
 The OData specification suggests to support [Atom](http://docs.oasis-open.org/odata/odata-atom-format/v4.0/odata-atom-format-v4.0.html)
@@ -63,15 +63,18 @@ Install the component like any other node package with npm
 To use this loopback component you have to activate it in the file
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;`server/component-config.json`
 
-of your project. Add the following line to this file
+of your project. Add the following lines to this file
 
 ```
   "n-odata-server": {
-    "path": "/odata/*"
+    "path": "/odata/*",
+    "odataversion": "2"
   }
 ```
 If you are not happy with the prefix `odata` you can of course use another one. Just exchange `odata` with you prefix
 e.g. `myservice`. Then your requests to the odata service have to start with `/myservice/`.
+The line `"odataversion": "2"` means that the server works with OData V2. We highly recommend to use this version at the
+moment.
 
 ### Firing OData requests
 To fire your OData request simply start your server application with
