@@ -248,6 +248,11 @@ export class ODataGetBase extends BaseRequestHandler.BaseRequestHandler {
 							// apply $select URL parameter
 							filter = _applySelect.call(this, req, filter);
 
+							// apply $expand URL parameter
+							filter = _applyExpand.call(this, req, filter);
+
+							console.log("filter: " + JSON.stringify(filter));
+
 							// Now we call the find method of the ModelClass with filter definition
 							var result:CollectionResult = new CollectionResult();
 							ModelClass.find(filter).then(function (data) {
@@ -447,6 +452,38 @@ function _applyFilter(req, filter?:LoopbackFilter):LoopbackFilter {
 			throw new Error(ast.error);
 		}
 		filter.where = _convertAstToLoopbackFilter(ast.$filter, filter.where);
+	}
+	return filter;
+}
+
+/**
+ * Applies the $select URL parameter that may be defined on the URL to the filter object of loopback find.
+ * @param req
+ * @param filter
+ * @returns {filter}
+ * @private
+ */
+function _applyExpand(req, filter?:LoopbackFilter) {
+	var expandParam = req.query.$expand;
+	filter = filter || {};
+	if (expandParam) {
+		var expandString:string = "$expand=" + expandParam;
+		// parse the expandString into an ast
+		var ast:any = parser.parse(expandString);
+		if (ast.error) {
+			throw new Error(ast.error);
+		}
+		filter.include = [];
+		ast.$expand.forEach(function(obj) {
+			if(obj.indexOf('/') > -1) {
+				var objArr = obj.split('/');
+				var incl = {};
+				incl[objArr[0]] = objArr[1]
+				filter.include.push(incl);
+			} else {
+				filter.include.push(obj);
+			}
+		})
 	}
 	return filter;
 }

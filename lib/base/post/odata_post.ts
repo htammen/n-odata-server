@@ -26,14 +26,12 @@ export class ODataPostBase extends BaseRequestHandler.BaseRequestHandler{
 			commons.getModelClass(req.app, req.params[0]).then((ModelClass: any) => {
 				if (ModelClass) {
 					var readLocation = commons.getBaseURL(req) + ModelClass.definition.settings.plural;
-					ModelClass.create(req.body, function (err, obj) {
-						if (err || obj === null) {
-							reject(err);
-						} else {
-							// set location header to update or read URL
-							res.location(readLocation + '(\'' + obj.id + '\')');
-							resolve();
-						}
+					ModelClass.create(req.body).then(function(obj) {
+						// set location header to update or read URL
+						res.location(readLocation + '(\'' + obj.id + '\')');
+						resolve();
+					}, function(err) {
+						reject(err);
 					});
 				} else {
 					reject(404);
