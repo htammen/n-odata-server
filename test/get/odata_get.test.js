@@ -1,6 +1,6 @@
 var expect = require("chai").expect;
 var assert = require("chai").assert;
-var common = require(".././odata_get.js");
+var common = require("../../lib/base/get/odata_get.js");
 
 describe("Get", function(){
 

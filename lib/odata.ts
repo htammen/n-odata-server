@@ -17,6 +17,7 @@ import ODataDeleteV4 = require('./v4/delete/odata_delete');
 import ODataGetV2 = require('./v2/get/odata_get');
 import ODataPostV2 = require('./v2/post/odata_post');
 import ODataDeleteV2 = require('./v2/delete/odata_delete');
+import ODataPutV2 = require('./v2/put/odata_put');
 
 var oDataServerConfig;
 
@@ -24,7 +25,7 @@ var oDataServerConfig;
 /**
  * Exposes the main function of the n-odata-server
  */
-export = function (loopbackApplication, options) {
+export = function(loopbackApplication, options) {
 	// save the options defined in a local variable
 	oDataServerConfig = options || {};
 	// if not defined set a default value for server-side paging
@@ -62,6 +63,7 @@ function _handleODataVersion2(loopbackApplication, options, oDataServerConfig) {
 	this.oDataGet = new ODataGetV2.ODataGet();
 	this.oDataPost = new ODataPostV2.ODataPost();
 	this.oDataDelete = new ODataDeleteV2.ODataDelete();
+	this.oDataPut = new ODataPutV2.ODataPut();
 
 	common.setConfig(oDataServerConfig);
 	this.oDataGet.setConfig(oDataServerConfig);
@@ -75,12 +77,13 @@ function _handleODataVersion2(loopbackApplication, options, oDataServerConfig) {
 				case 'POST':
 					_handlePost.call(this, req, res);
 					break;
-				//// PUT is used to update an entity and to overwrite all property values with its default
-				//// values if they are not submitted with the request. In other words it resets an entity and
-				//// only sets the submitted properties
-				//case 'PUT':
-				//	_handlePut.call(this, req, res);
-				//	break;
+				// PUT is used to update an entity and to overwrite all property values with its default
+				// values if they are not submitted with the request. In other words it resets an entity and
+				// only sets the submitted properties
+				case 'PUT':
+					_handlePut.call(this, req, res);
+					var i=2;
+					break;
 				//// PATCH should be the preferred method to update an entity
 				//case 'PATCH':
 				//	_handlePATCH.call(this, req, res);
