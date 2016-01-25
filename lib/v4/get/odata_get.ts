@@ -137,7 +137,7 @@ function _getServiceDocument(req, res) {
  */
 function _getCollectionData(req, res) {
 	//DONE: The odata.nextLink annotation MUST be included in a response that represents a partial result. "@odata.nextLink": "...?$skiptoken=342r89"
-	commons.getModelClass(req.app, req.params[0]).then((ModelClass: any) => {
+	commons.getModelClass(req.app.models, req.params[0]).then((ModelClass: any) => {
 		if (ModelClass) {
 			// Retrieve odata.maxpagesize from Prefer header of the request
 			var _maxpagesize;
@@ -238,7 +238,7 @@ function _getEntityData(req, res) {
 	// extract the id from the request
 	var id = commons.getIdFromUrlParameter(param0);
 	var collection = param0.substr(0, param0.indexOf('('));
-	commons.getModelClass(req.app, param0).then((ModelClass: any) => {
+	commons.getModelClass(req.app.models, param0).then((ModelClass: any) => {
 		if (ModelClass) {
 			// apply $select URL parameter
 			var filter = _applySelect(req);

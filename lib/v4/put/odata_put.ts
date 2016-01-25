@@ -36,7 +36,7 @@ function _handlePut(req, res) {
 	// set OData-Version in response header
 	this.setODataVersion(res);
 
-	commons.getModelClass(req.app, req.params[0]).then((ModelClass: any) => {
+	commons.getModelClass(req.app.models, req.params[0]).then((ModelClass: any) => {
 
 		if (ModelClass) {
 			var id = commons.getIdFromUrlParameter(req.params[0]);
@@ -81,7 +81,7 @@ function _handlePatch(req, res) {
 	// set OData-Version in response header
 	this.setODataVersion(res);
 
-	commons.getModelClass(req.app, req.params[0]).then((ModelClass: any) => {
+	commons.getModelClass(req.app.models, req.params[0]).then((ModelClass: any) => {
 
 		if (ModelClass) {
 			var id = commons.getIdFromUrlParameter(req.params[0]);

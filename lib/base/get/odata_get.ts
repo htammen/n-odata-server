@@ -169,7 +169,7 @@ export class ODataGetBase extends BaseRequestHandler.BaseRequestHandler {
 	_getCollectionData(req, res) {
 		return new Promise((resolve, reject) => {
 			//DONE: The odata.nextLink annotation MUST be included in a response that represents a partial result. "@odata.nextLink": "...?$skiptoken=342r89"
-			commons.getModelClass(req.app, req.params[0]).then((ModelClass:any) => {
+			commons.getModelClass(req.app.models, req.params[0]).then((ModelClass:any) => {
 				try {
 					if (ModelClass) {
 						// Retrieve odata.maxpagesize from Prefer header of the request
@@ -323,7 +323,7 @@ export class ODataGetBase extends BaseRequestHandler.BaseRequestHandler {
 			var arrParams0 = req.params[0].split('/');
 			if (arrParams0 && arrParams0[arrParams0.length - 1] === '$count') {
 				// the collection has to be in the first part of params
-				commons.getModelClass(req.app, arrParams0[0]).then((ModelClass:any) => {
+				commons.getModelClass(req.app.models, arrParams0[0]).then((ModelClass:any) => {
 					if (ModelClass) {
 						if (req.accepts("text/plain")) {
 							ModelClass.count().then(function (count) {
@@ -354,7 +354,7 @@ export class ODataGetBase extends BaseRequestHandler.BaseRequestHandler {
 			// extract the id from the request
 			var id = commons.getIdFromUrlParameter(param0);
 			var collection = param0.substr(0, param0.indexOf('('));
-			commons.getModelClass(req.app, param0).then((ModelClass:any) => {
+			commons.getModelClass(req.app.models, param0).then((ModelClass:any) => {
 				if (ModelClass) {
 					// apply $select URL parameter
 					var filter = _applySelect(req);

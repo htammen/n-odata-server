@@ -28,7 +28,7 @@ export class ODataPutBase extends BaseRequestHandler.BaseRequestHandler {
 			// set OData-Version in response header
 			this.setODataVersion(res, constants.ODATA_VERSION_2);
 
-			commons.getModelClass(req.app, req.params[0]).then((ModelClass:any) => {
+			commons.getModelClass(req.app.models, req.params[0]).then((ModelClass:any) => {
 
 				if (ModelClass) {
 					var id = commons.getIdFromUrlParameter(req.params[0]);
@@ -82,7 +82,7 @@ export class ODataPutBase extends BaseRequestHandler.BaseRequestHandler {
 			// set OData-Version in response header
 			this.setODataVersion(res, constants.ODATA_VERSION_2);
 
-			commons.getModelClass(req.app, req.params[0]).then((ModelClass:any) => {
+			commons.getModelClass(req.app.models, req.params[0]).then((ModelClass:any) => {
 
 				if (ModelClass) {
 					var id = commons.getIdFromUrlParameter(req.params[0]);

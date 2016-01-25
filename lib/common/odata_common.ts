@@ -127,7 +127,7 @@ function _isRequestEntity(req) {
  * @returns {string}
  * @private
  */
-function _getPluralForModel(model) {
+function _getPluralForModel(model: Function): string {
 	var plural = model.definition.settings.plural;
 	if (!plural) {
 		plural = model.definition.name + 's';
@@ -159,12 +159,12 @@ function _getIdFromUrlParameter(param0) {
 /**
  * get the Model for a className. The className must be equal to
  * the pluralModelName of the Model itself.
- * @param  {[type]} app            [description]
+ * @param  {[type]} models            [description]
  * @param  {[type]} className      The name of the class
- * @return {[type]}                [description]
+ * @return {[type]}                Promise that resolves to a ModelClass
  */
-function _getModelClass(app, className) {
-	return new Promise((resolve, reject) => {
+function _getModelClass(models: Function, className: string) {
+	return new Promise<any>((resolve, reject) => {
 		var ModelClass;
 
 		if(className.indexOf('(') !== -1) {
@@ -172,16 +172,14 @@ function _getModelClass(app, className) {
 			className = className.substr(0, className.indexOf('('));
 		} else {
 			// Try to get the singular class first
-			ModelClass = app.models[className];
+			ModelClass = models[className];
 		}
 
 		// Now try to get the class by it's plural definition
 		// In this case its a collection
 		if(!ModelClass) {
-			var models = app.models();
-
-			for(var i=0; i<models.length; i++) {
-				var model = models[i];
+			for(var modelStr in models) {
+				var model = models[modelStr];
 				if(model.definition.settings.plural === className) {
 					ModelClass = model;
 					break;  // return from forEach

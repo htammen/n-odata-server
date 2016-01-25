@@ -26,7 +26,7 @@ export class ODataDeleteBase extends BaseRequestHandler.BaseRequestHandler{
 			var param0 = req.params[0];
 			// extract the id from the request
 			var id = commons.getIdFromUrlParameter(param0);
-			commons.getModelClass(req.app, param0).then((ModelClass: any) => {
+			commons.getModelClass(req.app.models, param0).then((ModelClass: any) => {
 				if(ModelClass) {
 					ModelClass.destroyById(id, function(err) {
 						if(!err) {

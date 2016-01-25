@@ -28,7 +28,7 @@ function _handlePost(req, res) {
 	// set OData-Version in response header
 	this.setODataVersion(res);
 
-	commons.getModelClass(req.app, req.params[0]).then((ModelClass: any) => {
+	commons.getModelClass(req.app.models, req.params[0]).then((ModelClass: any) => {
 
 		if (ModelClass) {
 			var readLocation = commons.getBaseURL(req) + ModelClass.definition.settings.plural;

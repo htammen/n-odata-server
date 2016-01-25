@@ -11,7 +11,7 @@ import fs = require('fs');
 import {CollectionResult} from "../../base/get/odata_get";
 import {EntityResult} from "../../base/get/odata_get";
 import {ServiceDocumentResult} from "../../base/get/odata_get";
-import {getMetaData} from "./metadata";
+import {Metadata} from "../../base/metadata/metadata";
 
 /**
  * A module for exporting common function that are used by several other
@@ -96,9 +96,10 @@ export class ODataGet extends ODataGetBase.ODataGetBase{
 
 /** Just in test state at the moment */
 function _getMetadataDocument(req, res) {
-	var metaaData = getMetaData(req.app.models());
-	res.set('Content-Type', 'application/xml');
-	res.send(metaaData);
+	new Metadata(req.app).buildMetadata().then(function(metaData) {
+		res.set('Content-Type', 'application/xml');
+		res.send(metaData);
+	});
 }
 
 
