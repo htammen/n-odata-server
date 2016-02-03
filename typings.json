@@ -1,0 +1,11 @@
+{
+  "ambientDependencies": {
+    "chai": "github:DefinitelyTyped/DefinitelyTyped/chai/chai.d.ts#faa49cc68025118355b677b936892435b9be7247",
+    "es6-promise": "github:DefinitelyTyped/DefinitelyTyped/es6-promise/es6-promise.d.ts#5bff5f871a0ea58be885fb52146cb67b86bcc1ae",
+    "express": "github:DefinitelyTyped/DefinitelyTyped/express/express.d.ts#dd4626a4e23ce8d6d175e0fe8244a99771c8c3f2",
+    "log4js": "github:DefinitelyTyped/DefinitelyTyped/log4js/log4js.d.ts#7554cff7c4dd34decc2f3dc0d711a6c288174eee",
+    "mocha": "github:DefinitelyTyped/DefinitelyTyped/mocha/mocha.d.ts#faa49cc68025118355b677b936892435b9be7247",
+    "serve-static": "github:DefinitelyTyped/DefinitelyTyped/serve-static/serve-static.d.ts#0fa4e9e61385646ea6a4cba2aef357353d2ce77f"
+  },
+  "dependencies": {}
+}

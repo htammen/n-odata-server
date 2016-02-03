@@ -1,0 +1,19 @@
+{
+	"appenders": [
+		{ "type": "console",
+			"layout": {
+				"type": "basic"
+			}
+		},
+		{
+			"type": "file",
+			"filename": "n_odata_server.log",
+			"maxLogSize": 1048576
+		}
+	],
+	"replaceConsole": true,
+
+	"levels": {
+		"[all]": "TRACE"
+	}
+}

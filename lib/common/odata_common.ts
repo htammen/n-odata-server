@@ -1,6 +1,7 @@
-/// <reference path="../../typescript/declarations/es6-promise.d.ts" />
+/// <reference path="../../typings/main.d.ts" />
 import constants = require('../constants/odata_constants');
 import enums = require('../constants/odata_enums');
+import {LoopbackModelClass} from "../types/loopbacktypes";
 
 var oDataServerConfig;
 
@@ -127,7 +128,7 @@ function _isRequestEntity(req) {
  * @returns {string}
  * @private
  */
-function _getPluralForModel(model: Function): string {
+function _getPluralForModel(model: LoopbackModelClass): string {
 	var plural = model.definition.settings.plural;
 	if (!plural) {
 		plural = model.definition.name + 's';

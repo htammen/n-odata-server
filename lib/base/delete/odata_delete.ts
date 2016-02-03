@@ -1,4 +1,4 @@
-/// <reference path="../../../typescript/declarations/es6-promise.d.ts" />
+/// <reference path="../../../typings/main.d.ts" />
 /**
  * Created by helmut on 10.12.15.
  */

@@ -1,3 +1,10 @@
+/// <reference path="../../typings/main.d.ts" />
+
+import log4js = require('log4js');
+import {Response} from "express";
+
+var logger = log4js.getLogger("base");
+
 /**
  * This is a base class for all OData request handler classes like odata_get, odata_put, ...
  * It exposes functions that are used by all derived classes
@@ -20,7 +27,7 @@ export class BaseRequestHandler {
 	 * @param res
 	 * @private
 	 */
-	setODataVersion(res, version: string) {
+	setODataVersion(res:Response, version: string) {
 		// default for OData version is 4.0
 		if(!version) {
 			version = "4.0"
@@ -42,10 +49,10 @@ export class BaseRequestHandler {
 	 * @param err error object or statusCode
 	 * @param res response object that holds the data send to the client
      */
-	handleError(err, res) {
-		if (typeof err === 'Object') {
+	handleError(err, res:Response) {
+		if (typeof err === 'object') {
 			console.error(err);
-			res.sendStatus(500);
+			res.status(500).send(err.toString());
 		} else if (typeof err === 'number') {
 			res.sendStatus(err);
 		} else {
@@ -62,6 +69,7 @@ export class BaseRequestHandler {
  * @private
  */
 function _setConfig(config) {
+	logger.info("component config set to %s", JSON.stringify(config, null, '\t'));
 	this.oDataServerConfig = config;
 }
 

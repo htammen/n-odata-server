@@ -1,15 +1,23 @@
-/// <reference path="../../../typescript/declarations/es6-promise.d.ts" />
+/// <reference path="../../../typings/main.d.ts" />
+
 /**
  * Created by helmut on 10.12.15.
  */
 
-import BaseRequestHandler = require('../BaseRequestHandler');
+import log4js = require('log4js');
 import commons = require('../../common/odata_common');
 import constants = require('../../constants/odata_constants');
 import req_header = require('../../common/odata_req_header');
+import lb_constants = require('../../constants/loopback_constants');
+import lb_types = require('../../types/loopbacktypes');
+import {LoopbackRelationDefinition} from "../../types/loopbacktypes";
+import {LoopbackModelDefinition} from "../../types/loopbacktypes";
+import {LoopbackModelClass} from "../../types/loopbacktypes";
+import {BaseUpdateRequestHandler} from "../BaseUpdateRequestHandler";
 
+var logger = log4js.getLogger("put");
 
-export class ODataPutBase extends BaseRequestHandler.BaseRequestHandler {
+export class ODataPutBase extends BaseUpdateRequestHandler {
 	constructor() {
 		super()
 	};
@@ -24,19 +32,20 @@ export class ODataPutBase extends BaseRequestHandler.BaseRequestHandler {
 	 * @private
 	 */
 	_handlePut(req, res) {
+		logger.trace("handle put");
 		return new Promise((resolve, reject) => {
 			// set OData-Version in response header
 			this.setODataVersion(res, constants.ODATA_VERSION_2);
 
-			commons.getModelClass(req.app.models, req.params[0]).then((ModelClass:any) => {
+			commons.getModelClass(req.app.models, req.params[0]).then(((ModelClass:LoopbackModelClass) => {
 
 				if (ModelClass) {
 					var id = commons.getIdFromUrlParameter(req.params[0]);
-					var reqObj = req.body;
+					var reqObj:any = req.body;
 					// create an object that is saved to the db and set all properties from request body
 					// If not defined there set default value or undefined if no default has been defined
-					var updateObj = {};
-					ModelClass.forEachProperty(function (propName, property) {
+					var updateObj:Object = {};
+					ModelClass.forEachProperty((propName, property) => {
 						if (reqObj[propName]) {
 							updateObj[propName] = reqObj[propName];
 						} else {
@@ -44,29 +53,37 @@ export class ODataPutBase extends BaseRequestHandler.BaseRequestHandler {
 						}
 					});
 
-					var idName = ModelClass.getIdName();
-					var whereObj = {};
-					whereObj[idName] = id;
-					// Here we use the static method updataAll. We could also have read the entity
-					// and updated it with update
-					ModelClass.updateAll(whereObj, updateObj, function (err, results) {
-						if (err || results.count === 0) {
-							if (err) {
-								console.log(err);
-								reject(err);
-							} else {
-								console.log('undefined error');
-								reject(500);
-							}
-						} else {
+					ModelClass.findById(id).then(instance => {
+						logger.trace("found %s with id %s in database. Will try to update the object", ModelClass.modelName, id);
+						return instance.updateAttributes(updateObj)
+					}).then((instance) => {
+						logger.trace("updated %s with id %s.", ModelClass.modelName, id);
+						// update inline relations transmitted to this function
+						this._upsertInlineRelations(instance, ModelClass, reqObj).then(result => {
 							resolve(204);
+						}).catch(err => {
+							reject(err);
+						})
+					}).catch((err) => {
+						if (err) {
+							logger.error(err);
+							reject(err);
+						} else {
+							logger.error('undefined error');
+							reject(500);
 						}
 					});
+					//})
+					//.catch((err => {
+					//	console.log('could not read object of model ' + ModelClass.name + ' with id ' + id);
+					//	reject(500);
+					//}).bind(this))
+
 				} else {
-					console.log('ModelClass not found');
+					logger.warn('ModelClass not found');
 					reject(404);
 				}
-			});
+			}).bind(this));
 		})
 	}
 
@@ -78,11 +95,13 @@ export class ODataPutBase extends BaseRequestHandler.BaseRequestHandler {
 	 * @private
 	 */
 	_handlePatch(req, res) {
+		// TODO: Currently the only thing the handlePatch differentiates from handlePut is that no default value is sett. Is this corrent?
+		logger.trace("handle patch / merge");
 		return new Promise((resolve, reject) => {
 			// set OData-Version in response header
 			this.setODataVersion(res, constants.ODATA_VERSION_2);
 
-			commons.getModelClass(req.app.models, req.params[0]).then((ModelClass:any) => {
+			commons.getModelClass(req.app.models, req.params[0]).then((ModelClass:LoopbackModelClass) => {
 
 				if (ModelClass) {
 					var id = commons.getIdFromUrlParameter(req.params[0]);
@@ -90,32 +109,35 @@ export class ODataPutBase extends BaseRequestHandler.BaseRequestHandler {
 					// create an object that is saved to the db and set all properties from request body
 					// If not defined there set default value or undefined if no default has been defined
 					var updateObj = {};
-					ModelClass.forEachProperty(function (propName, property) {
+					ModelClass.forEachProperty((propName, property) => {
 						if (reqObj[propName]) {
 							updateObj[propName] = reqObj[propName];
 						}
 					});
 
-					var idName = ModelClass.getIdName();
-					var whereObj = {};
-					whereObj[idName] = id;
-					// Here we use the static method updataAll. We could also have been read the entity
-					// and updated it with update
-					ModelClass.updateAll(whereObj, updateObj, function (err, results) {
-						if (err || results.count === 0) {
-							if (err) {
-								console.log(err);
-								reject(err);
-							} else {
-								console.log('undefined error');
-								reject(500);
-							}
+					ModelClass.findById(id).then(instance => {
+						logger.trace("found %s with id %s in database. Will try to update the object", ModelClass.name, id);
+						return instance.updateAttributes(updateObj)
+					}).then((instance) => {
+						logger.trace("updated %s with id %s.", ModelClass.name, id);
+						// update inline relations transmitted to this function
+						this._upsertInlineRelations(instance, ModelClass, reqObj).then(result => {
+							resolve(204);
+						}).catch(err => {
+							reject(err);
+						})
+					}).catch((err) => {
+						if (err) {
+							logger.error(err);
+							reject(err);
 						} else {
-							res.sendStatus(204);
+							logger.error('undefined error');
+							reject(500);
 						}
 					});
 				} else {
-					res.sendStatus(404);
+					logger.warn('ModelClass not found');
+					reject(404);
 				}
 			});
 		});

@@ -1,11 +1,13 @@
-/// <reference path="../../../typescript/declarations/node.d.ts" />
-/// <reference path="../../../typescript/declarations/es6-promise.d.ts" />
+/// <reference path="../../../typings/main.d.ts" />
+
+import log4js = require('log4js');
 import commons = require('../../common/odata_common');
 import constants = require('../../constants/odata_constants');
 import {MetaAssociation} from "./metaAssociation";
 
-var builder = require('xmlbuilder');
+var builder = require("xmlbuilder");
 
+var logger = log4js.getLogger('metadata');
 
 /**
  * This class handles the meatdata of the OData service
@@ -25,6 +27,7 @@ export class Metadata {
 	 * @returns {any}
 	 */
 	public buildMetadata():Promise<any> {
+		logger.trace("entering buildMetadata");
 		var EntityType = [];
 		var EntitySet = [];
 		var appModels = this._app.models();  // have to do this because models will not be known in forEach
@@ -150,6 +153,7 @@ export class Metadata {
 							}
 						}, {version: '1.0', encoding: 'UTF-8'}
 					).end({pretty: true});
+					logger.trace('metadata xml build');
 					resolve(xmlBuilder);
 				});
 				})

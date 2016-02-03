@@ -18,6 +18,18 @@ import ODataGetV2 = require('./v2/get/odata_get');
 import ODataPostV2 = require('./v2/post/odata_post');
 import ODataDeleteV2 = require('./v2/delete/odata_delete');
 import ODataPutV2 = require('./v2/put/odata_put');
+import fs = require( 'fs' );
+
+// Configure logging
+// TODO: make logging more flexible, e.g. let user configure the name and location of the log file via component configuration
+import log4js = require('log4js');
+fs.stat('n_odata_server_log.json', function(err, stat) {
+	var fileName = __dirname + '/log4js.json';
+	if(!err) {
+		fileName = 'n_odata_server_log.json';
+	}
+	log4js.configure(fileName);
+})
 
 var oDataServerConfig;
 

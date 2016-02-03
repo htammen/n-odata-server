@@ -1,4 +1,4 @@
-/// <reference path="../../../typescript/declarations/es6-promise.d.ts" />
+/// <reference path="../../../typings/main.d.ts" />
 /**
  * Created by helmut on 01.12.15.
  */
@@ -8,22 +8,13 @@ import BaseRequestHandler = require('../BaseRequestHandler');
 import commons = require('../../common/odata_common');
 import constants = require('../../constants/odata_constants');
 import req_header = require('../../common/odata_req_header');
+import {LoopbackFilter} from "../../types/loopbacktypes";
 
 /** Interface for metadata of OData */
 interface Metadata {
 	uri: String,
 	type: String,
 	etag?: String
-}
-
-/** Interface for loopback filter definition */
-interface LoopbackFilter {
-	fields?: any,
-	include?: any,
-	limit?: number,
-	order?: string,
-	skip?: number,
-	where?: any
 }
 
 export interface CollectionResultResult {
@@ -88,6 +79,7 @@ export class CollectionResult {
  */
 export class EntityResult {
 	data:any;
+	value: any;
 
 	constructor() {
 	};
@@ -116,10 +108,15 @@ export class EntityResult {
 	 * @returns {{d: any}}
 	 **/
 	getRequestResult():any {
-		var retValue:{d: any} = {d: {}};
-		retValue.d = this.data;
-
-		return retValue;
+		if(this.data) {
+			var retValue:{d: any} = {d: {}};
+			retValue.d = this.data;
+			return retValue;
+		} else {
+			var retValue2:{value: any} = {value: {}};
+			retValue2.value = this.value;
+			return retValue2;
+		}
 	};
 }
 
@@ -169,7 +166,7 @@ export class ODataGetBase extends BaseRequestHandler.BaseRequestHandler {
 	_getCollectionData(req, res) {
 		return new Promise((resolve, reject) => {
 			//DONE: The odata.nextLink annotation MUST be included in a response that represents a partial result. "@odata.nextLink": "...?$skiptoken=342r89"
-			commons.getModelClass(req.app.models, req.params[0]).then((ModelClass:any) => {
+			commons.getModelClass(req.app.models, req.params[0]).then(((ModelClass:any) => {
 				try {
 					if (ModelClass) {
 						// Retrieve odata.maxpagesize from Prefer header of the request
@@ -255,21 +252,25 @@ export class ODataGetBase extends BaseRequestHandler.BaseRequestHandler {
 
 							// Now we call the find method of the ModelClass with filter definition
 							var result:CollectionResult = new CollectionResult();
-							ModelClass.find(filter).then(function (data) {
+							ModelClass.find(filter).then(((data) => {
 								// add metadata
-								data.forEach(function (object, idx, arr) {
+								data.forEach(((object, idx, arr) => {
 									object.__data.__metadata = {
 										uri: commons.getBaseURL(req) + '/' + commons.getPluralForModel(ModelClass) + '(' + object.getId() + ')',
 										type: constants.ODATA_NAMESPACE + '.' + ModelClass.definition.name
 									};
-								});
-								// add retrieved data from backend / db
+									// add deferred relations
+									for(var rel in ModelClass.relations) {
+										this._createDeferredObject(object, rel, req, ModelClass, object.getId());
+									}
+								}).bind(this));
+								// add retrieved data from backend / db to the result
 								result.data = data;
 								if (nextLink) {
 									result.nextLink = nextLink;
 								}
 								return result;
-							}).then(function (result) {
+							}).bind(this)).then(function (result) {
 								// if $inlinecount was requested we have to count all records in the database
 								if (req.query.$inlinecount) {
 									ModelClass.count().then(function (resultCount) {
@@ -305,7 +306,7 @@ export class ODataGetBase extends BaseRequestHandler.BaseRequestHandler {
 				} catch (e) {
 					reject(e);
 				}
-			}, (error) => {
+			}).bind(this), (error) => {
 				reject(Error(error));
 			})
 		});
@@ -350,37 +351,85 @@ export class ODataGetBase extends BaseRequestHandler.BaseRequestHandler {
 	 */
 	_getEntityData(req, res) {
 		return new Promise((resolve, reject) => {
-			var param0 = req.params[0];
+			var param0:string = req.params[0];
+			var arrParamToken:Array<string> = param0.split("/");
 			// extract the id from the request
-			var id = commons.getIdFromUrlParameter(param0);
-			var collection = param0.substr(0, param0.indexOf('('));
-			commons.getModelClass(req.app.models, param0).then((ModelClass:any) => {
+			var id = commons.getIdFromUrlParameter(arrParamToken[0]);
+			var collection = arrParamToken[0].substr(0, param0.indexOf('('));
+			commons.getModelClass(req.app.models, arrParamToken[0]).then( ((ModelClass:any) => {
 				if (ModelClass) {
 					// apply $select URL parameter
 					var filter = _applySelect(req);
+					// apply $expand URL parameter
+					filter = _applyExpand.call(this, req, filter);
 
-					ModelClass.findById(id, filter, function (err, instance) {
-						if (err) {
-							reject(err);
-						} else {
-							if (instance) {
+					ModelClass.findById(id, filter).then( ((instance) => {
+						if (instance) {
+							// Handling $links
+							if(arrParamToken[1] === "$links") {
+								var result:EntityResult = new EntityResult();
+								// retrieve the relations from the ModelClass instance
+								instance[arrParamToken[2]]( (err, res) => {
+									if(err){
+										console.error(err);
+										reject(500);
+									} else {
+										console.log(res);
+										result.value = [];
+										res.forEach((obj, idx, arr) => {
+											var url = commons.getBaseURL(req) + '/' + arrParamToken[2] + '(' + obj.getId() + ')'
+											result.value.push({url: url});
+										});
+										resolve(result);
+									}
+								});
+
+							} else {
+								// add deferred relations
+								for(var rel in ModelClass.relations) {
+									this._createDeferredObject(instance, rel, req, ModelClass, id);
+								}
+								// Handling regular Entity requests
 								var result:EntityResult = new EntityResult();
 								result.data = instance.toJSON();
 								resolve(result);
-							} else {
-								console.error('entity data for request ' + req.originalUrl + ' was not found');
-								reject(404);
 							}
+						} else {
+							console.error('entity data for request ' + req.originalUrl + ' was not found');
+							reject(404);
 						}
+					}).bind(this)).catch(err => {
+						reject(err);
 					});
+
 				} else {
 					reject(404);
 				}
-			})
+			}).bind(this))
 		});
 	}
 
+
 	/**
+	 * Helper method for generating a deferred entry
+	 * @param instance
+	 * @param rel
+	 * @param req
+	 * @param ModelClass
+	 * @param id
+     * @private
+     */
+	_createDeferredObject(instance:{__data: any}, rel:string, req:any, ModelClass:any, id:any) {
+		if (!instance.__data[rel]) {
+			instance.__data[rel] = {
+				__deferred: {
+					uri: commons.getBaseURL(req) + '/' + commons.getPluralForModel(ModelClass) + '(' + id + ')/' + rel
+				}
+			}
+		}
+	}
+
+/**
 	 * Returns the service document of this service
 	 * The service document displays all entitysets, functions, Singletons, ... that the service
 	 * exposes

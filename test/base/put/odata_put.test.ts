@@ -1,5 +1,4 @@
-/// <reference path="../../../typings/mocha/mocha.d.ts" />
-/// <reference path="../../../typings/chai/chai.d.ts" />
+/// <reference path="../../../typings/main.d.ts" />
 
 /**
  * Module dependencies.
@@ -38,7 +37,7 @@ describe('User Model Unit Tests:', () => {
             });
             done();
         });
-        
+
         it('test a _handlePut should throw an error', (done) => {
             var putBase: ODataPutBase = new ODataPutBase();
             putBase._handlePut(null, null).catch(function(err) {

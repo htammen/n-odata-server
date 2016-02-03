@@ -1,12 +1,13 @@
 {
   "name": "n-odata-server",
-  "version": "0.3.2",
+  "version": "0.3.3",
   "description": "OData server for loopback framework",
   "main": "index.js",
   "scripts": {
     "pretest": "jshint ."
   },
   "dependencies": {
+    "log4js": "^0.6.31",
     "odata-parser": "^1.2.1",
     "xmlbuilder": "^4.1.0"
   },

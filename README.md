@@ -40,18 +40,19 @@ on V2 we will support version 2.0 at first.
 #### OData formats
 The OData specification suggests to support [Atom](http://docs.oasis-open.org/odata/odata-atom-format/v4.0/odata-atom-format-v4.0.html)
 as well as [JSON](http://docs.oasis-open.org/odata/odata-json-format/v4.0/odata-json-format-v4.0.html).
-One of these formats must be supported. We will probably only support the JSON format as it is much more lightweight and
+One of these formats must be supported. We will __probably only support the JSON format__ as it is much more lightweight and
 therefore easier to implement.
 
 ### Loopback
 This project relies on and requires [Loopback](http://loopback.io/) a very mature node.js framework for
 development of database independent node.js web applications. Our project extends this framework
-with the ability to expose it's data via OData. Loopback already exposes the data via a proprietary RESTful API. If you are fine with this just use it. But if you want to base your projects on standards user OData and our loopback add-on.
+with the ability to expose it's data via OData. Loopback already exposes the data via a proprietary RESTful API. If you are fine with this just use it.
+But if you want to base your projects on standards use OData and our loopback add-on.
 
 ## Usage
 ### Prerequisites
 This component is not usable out of the box. You already need to have a loopback application. You can thent add this
-component to the existing application. See [here](http://loopback.io/getting-started/) for details on installing and
+component to the existing application. Look [here](http://loopback.io/getting-started/) for details on installing and
 creating a loopback application.
 
 ### Installation
@@ -137,7 +138,7 @@ I get the data for this collection
 ```
 
 ### Supported requests
-Currently very basic requests for the following http verbs are supported
+Currently basic requests for the following http verbs are supported
 
 * `GET`: Get all records of an entityset or a single record
 * `POST`: Create a new entry in your database
@@ -146,7 +147,47 @@ Currently very basic requests for the following http verbs are supported
 * `MERGE`: Update an entry in your database (to be OData V2.0 compatible)
 * `PUT`: Update an entry in your database
 
+If you encounter a lack in the implementation this is either not implemented yet or you found an error.
+In both cases you have the following opportunities
+
+* fork the repo, fix the problem and raise a pull request so that we can take it over into the master branch of our project
+* create an issue on Github
+* wait until we came to the same error/lack and fixed it.
+
 If you are not familiar with OData request have a look at the above mentioned OData resources.
+
+### OData restrictions
+Currently we don't support
+
+* Batch requests. You have to configure your frontend to not using these. In SAPUI5 / OpenUI5 this can be done by setting a
+flag
+* Atom / XML request. As mentioned above we only support JSON.
+
+### Logging
+We use [log4js](https://github.com/nomiddlename/log4js-node) for internal logging purposes.
+Per default we log to the console and to a file named `n_odata_server.log` that is created in the root directory of your
+development project.
+The default logging configuration is quite verbose. If you don't want to see that much information you can adjust it.
+Create a file named `n_odata_server_log.json` in the root directory of your project and configure your logging preferences.
+See the log4js documentation for more details.
+Following you see the default configuration that is used if the above mentioned file does not exist.
+```
+{
+	"appenders": [
+		{ "type": "console" },
+		{
+			"type": "file",
+			"filename": "n_odata_server.log",
+			"maxLogSize": 1048576
+		}
+	],
+	"replaceConsole": true,
+
+	"levels": {
+		"[all]": "TRACE"
+	}
+}
+```
 
 
 ## License

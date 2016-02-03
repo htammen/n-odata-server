@@ -1,5 +1,4 @@
-/// <reference path="../../../typescript/declarations/node.d.ts" />
-/// <reference path="../../../typescript/declarations/es6-promise.d.ts" />
+/// <reference path="../../../typings/main.d.ts" />
 
 import constants = require('../../constants/odata_constants');
 import enums = require('../../constants/odata_enums');
