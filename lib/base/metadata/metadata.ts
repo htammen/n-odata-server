@@ -68,12 +68,14 @@ export class Metadata {
 					var navProperty = {
 						"@Name": relation,
 						"@Relationship": constants.ODATA_NAMESPACE + "." + currentAssoc.getName()
-				};
-					navProperty["@FromRole"] = (currentAssoc ? currentAssoc.getRolename1() : "N.A.");
-					navProperty["@ToRole"] = (currentAssoc ? currentAssoc.getRolename2() : "N.A.");
+					};
+					navProperty["@FromRole"] = (currentAssoc ? currentAssoc.getRolenameFor(model.definition.name) : "N.A.");
+					navProperty["@ToRole"] = (currentAssoc ? currentAssoc.getRolenameFor(model.definition.settings.relations[relation].model) : "N.A.");
 					arrNavProps.push(navProperty);
 				}
-				entityTypeObj.NavigationProperty = arrNavProps;
+				if(arrNavProps.length > 0 ) {
+					entityTypeObj.NavigationProperty = arrNavProps;
+				}
 
 				EntityType.push(entityTypeObj);
 
@@ -136,7 +138,7 @@ export class Metadata {
 								"@xmlns:m": "http://schemas.microsoft.com/ado/2007/08/dataservices/metadata",
 								"@Version": "1.0",
 								"edmx:DataServices": {
-									"@m.DataServiceVersion": "2.0",
+									"@m:DataServiceVersion": "2.0",
 									"Schema": {
 										"@xmlns": "http://schemas.microsoft.com/ado/2008/09/edm",
 										"@Namespace": constants.ODATA_NAMESPACE,

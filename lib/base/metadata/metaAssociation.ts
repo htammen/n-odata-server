@@ -7,8 +7,8 @@ import lb_constants = require('../../constants/loopback_constants');
 
 enum AssociationMulitplicity {
 	ZERO_ONE = <any>'0..1',
-	ONE_ONE = <any>'1..1',
-	ONE_MANY = <any>'1..*',
+	ONE_ONE = <any>'1',
+	ONE_MANY = <any>'*',
 	MANY = <any>'*'
 }
 
@@ -68,7 +68,7 @@ export class MetaAssociation {
 	 */
 	static findOrCreateAssociationForModelRelation(model_definition:any, relation:any, relationName:string, models:Array<Object>, listOfAssociations:Array<MetaAssociation>): MetaAssociation {
 		// retrieve the model object of the relation that is under observation
-		var relationModels: Array<any> = models.filter(function (obj:any) {
+		var relationModels: Array<any> = models.filter((obj:any) => {
 			return obj.definition.name === relation.model
 		})
 		var relationModel:any = relationModels[0]; // should be only one
@@ -263,6 +263,19 @@ export class MetaAssociation {
 	 */
 	getRolename2(): string {
 		return this.model2 + "_" + this.relation2;
+	}
+
+	/**
+	 * Returns a rolename for a parent entity type / model
+	 * @param parentModel
+	 * @returns {string}
+     */
+	getRolenameFor(parentModel): string {
+		if(this.model1 === parentModel) {
+			return this.model1 + "_" + this.relation1;
+		} else {
+			return this.model2 + "_" + this.relation2;
+		}
 	}
 }
 
