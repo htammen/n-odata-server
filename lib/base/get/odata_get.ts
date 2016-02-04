@@ -66,6 +66,12 @@ export class CollectionResult {
 		retValue.d.results = [];
 		this.data.forEach(function (obj, idx) {
 			var tmpObj = obj.toJSON();
+			for(var prop in tmpObj) {
+				if(tmpObj[prop] instanceof Date) {
+					tmpObj[prop] = "/Date(" + tmpObj[prop].getTime() + ")/"
+				}
+			}
+
 			tmpObj.__metadata = obj.__data.__metadata;
 			retValue.d.results.push(tmpObj)
 		});
@@ -111,6 +117,11 @@ export class EntityResult {
 		if(this.data) {
 			var retValue:{d: any} = {d: {}};
 			retValue.d = this.data;
+			for(var prop in retValue.d) {
+				if(retValue.d[prop] instanceof Date) {
+					retValue.d[prop] = "/Date(" + retValue.d[prop].getTime() + ")/"
+				}
+			}
 			return retValue;
 		} else {
 			var retValue2:{value: any} = {value: {}};

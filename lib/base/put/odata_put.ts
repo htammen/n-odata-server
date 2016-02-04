@@ -47,7 +47,16 @@ export class ODataPutBase extends BaseUpdateRequestHandler {
 					var updateObj:Object = {};
 					ModelClass.forEachProperty((propName, property) => {
 						if (reqObj[propName]) {
-							updateObj[propName] = reqObj[propName];
+							// With date types we allow OData dates as well as Javascript dates
+							if(property.type.name === "Date") {
+								if(reqObj[propName].indexOf("/Date(") > -1) {
+									updateObj[propName] = new Date(parseInt(reqObj[propName].substr(6)));
+								} else {
+									updateObj[propName] = reqObj[propName];
+								}
+							} else {
+								updateObj[propName] = reqObj[propName];
+							}
 						} else {
 							updateObj[propName] = property.default;
 						}
@@ -111,7 +120,15 @@ export class ODataPutBase extends BaseUpdateRequestHandler {
 					var updateObj = {};
 					ModelClass.forEachProperty((propName, property) => {
 						if (reqObj[propName]) {
-							updateObj[propName] = reqObj[propName];
+							if(property.type.name === "Date") {
+								if(reqObj[propName].indexOf("/Date(") > -1) {
+									updateObj[propName] = new Date(parseInt(reqObj[propName].substr(6)));
+								} else {
+									updateObj[propName] = reqObj[propName];
+								}
+							} else {
+								updateObj[propName] = reqObj[propName];
+							}
 						}
 					});
 

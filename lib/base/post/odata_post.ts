@@ -44,8 +44,18 @@ export class ODataPostBase extends BaseUpdateRequestHandler {
 					// Additionally we set the default values for propertes that are not transmitted with the request
 					var createObj:Object = {};
 					ModelClass.forEachProperty((propName, property) => {
-						if (req.body[propName]) {
-							createObj[propName] = req.body[propName];
+						var reqObj:any = req.body;
+						if (reqObj[propName]) {
+							// With date types we allow OData dates as well as Javascript dates
+							if(property.type.name === "Date") {
+								if(reqObj[propName].indexOf("/Date(") > -1) {
+									createObj[propName] = new Date(parseInt(reqObj[propName].substr(6)));
+								} else {
+									createObj[propName] = reqObj[propName];
+								}
+							} else {
+								createObj[propName] = reqObj[propName];
+							}
 						} else {
 							createObj[propName] = property.default;
 						}
