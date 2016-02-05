@@ -87,7 +87,28 @@ function _handleODataVersion2(loopbackApplication, options, oDataServerConfig) {
 					_handleGet.call(this, req, res);
 					break;
 				case 'POST':
-					_handlePost.call(this, req, res);
+					var x_http_method: string = req.get('x-http-method');
+					if(x_http_method) {
+						switch (x_http_method) {
+							case 'MERGE':
+								_handleMerge.call(this, req, res);
+								break;
+							case 'PATCH':
+								_handleMerge.call(this, req, res);
+								break;
+							case 'PUT':
+								_handlePut.call(this, req, res);
+								break;
+							case 'DELETE':
+								_handleDelete.call(this, req, res);
+								break;
+
+							default:
+								res.status(500).send("HTTP verb %s not supported by POST tunneling", x_http_method);
+						}
+					} else {
+						_handlePost.call(this, req, res);
+					}
 					break;
 				// PUT is used to update an entity and to overwrite all property values with its default
 				// values if they are not submitted with the request. In other words it resets an entity and
@@ -144,7 +165,28 @@ function _handleODataVersion4(loopbackApplication, options, oDataServerConfig) {
 					_handleGet.call(this, req, res);
 					break;
 				case 'POST':
-					_handlePost.call(this, req, res);
+					var x_http_method: string = req.get('x-http-method');
+					if(x_http_method) {
+						switch (x_http_method) {
+							case 'MERGE':
+								_handlePatch.call(this, req, res);
+								break;
+							case 'PATCH':
+								_handlePatch.call(this, req, res);
+								break;
+							case 'PUT':
+								_handlePut.call(this, req, res);
+								break;
+							case 'DELETE':
+								_handleDelete.call(this, req, res);
+								break;
+
+							default:
+								res.status(500).send("HTTP verb %s not supported by POST tunneling", x_http_method);
+						}
+					} else {
+						_handlePost.call(this, req, res);
+					}
 					break;
 				// PUT is used to update an entity and to overwrite all property values with its default
 				// values if they are not submitted with the request. In other words it resets an entity and
@@ -154,12 +196,12 @@ function _handleODataVersion4(loopbackApplication, options, oDataServerConfig) {
 					break;
 				// PATCH should be the preferred method to update an entity
 				case 'PATCH':
-					_handlePATCH.call(this, req, res);
+					_handlePatch.call(this, req, res);
 					break;
 				// MERGE is used in OData V2.0 to update an entity. This has been changed in
 				// in V4.0 to PATCH
 				case 'MERGE':
-					_handlePATCH.call(this, req, res);
+					_handlePatch.call(this, req, res);
 					break;
 				case 'DELETE':
 					_handleDelete.call(this, req, res);
@@ -221,9 +263,23 @@ function _handlePut(req, res) {
  * @param res
  * @private
  */
-function _handlePATCH(req, res) {
+function _handlePatch(req, res) {
 	// delegate to put module
 	this.oDataPut.handlePatch(req, res);
+}
+
+
+/**
+ * handles the MERGE request to the OData server. The MERGE request is used to update an entity where
+ * only the submitted properties are set. The other properties of the entity will not be changed.
+ * This is only available with OData V2
+ * @param req
+ * @param res
+ * @private
+ */
+function _handleMerge(req, res) {
+	// delegate to put module
+	this.oDataPut.handleMerge(req, res);
 }
 
 

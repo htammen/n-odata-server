@@ -20,3 +20,4 @@ npm-debug.log
 .tscache
 *.js.map
 typings
+docu
