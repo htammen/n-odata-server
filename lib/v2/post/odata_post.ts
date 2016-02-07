@@ -27,8 +27,9 @@ export class ODataPost extends ODataPostBase {
 	 */
 	handlePost(req, res) {
 
-		super._handlePost(req, res).then(result => {
-			res.sendStatus(201)
+		super._handlePost(req, res).then(postResult => {
+			var result: any = postResult.getRequestResult();
+			res.status(201).send(result);
 		}).catch(err => {
 			super.handleError(err, res);
 		});

@@ -14,6 +14,7 @@ import {Response} from "express";
 import {Request} from "express";
 import {LoopbackRelationDefinition} from "../../types/loopbacktypes";
 import {BaseUpdateRequestHandler} from "../BaseUpdateRequestHandler";
+import {EntityResult} from "../BaseRequestHandler";
 
 var logger = log4js.getLogger("post");
 
@@ -69,8 +70,10 @@ export class ODataPostBase extends BaseUpdateRequestHandler {
 					}).then(instance => {
 						// create relations that are transmitted inline
 						// update inline relations transmitted to this function
-						this._upsertInlineRelations(instance, ModelClass, req.body).then(result => {
-							resolve(204);
+						this._upsertInlineRelations(instance, ModelClass, req.body).then(() => {
+							var result:EntityResult = new EntityResult();
+							result.data = instance.toJSON();
+							resolve(result);
 						}).catch(err => {
 							reject(err);
 						})

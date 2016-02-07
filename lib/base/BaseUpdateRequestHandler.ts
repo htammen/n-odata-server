@@ -91,11 +91,16 @@ export class BaseUpdateRequestHandler extends BaseRequestHandler {
 					}
 				}));
 			}
-			Promise.all(arrRelPromises).then((arrPromiseResults) => {
+			if(arrRelPromises.length > 0) {
+				Promise.all(arrRelPromises).then((arrPromiseResults) => {
+					resolve(204);
+				}).catch(err => {
+					reject(err);
+				})
+			} else {
+				// no relations to update --> resolve
 				resolve(204);
-			}).catch(err => {
-				reject(err);
-			})
+			}
 		})
 	}
 }

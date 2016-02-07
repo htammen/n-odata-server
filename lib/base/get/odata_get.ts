@@ -9,6 +9,7 @@ import commons = require('../../common/odata_common');
 import constants = require('../../constants/odata_constants');
 import req_header = require('../../common/odata_req_header');
 import {LoopbackFilter} from "../../types/loopbacktypes";
+import {EntityResult} from "../BaseRequestHandler";
 
 /** Interface for metadata of OData */
 interface Metadata {
@@ -77,57 +78,6 @@ export class CollectionResult {
 		});
 
 		return retValue;
-	};
-}
-
-/**
- * This is the return type of a entity request in OData V2
- */
-export class EntityResult {
-	data:any;
-	value: any;
-
-	constructor() {
-	};
-
-	/**
-	 * Returns the result for a collection request. This looks like
-	 * <pre><code>
-	 * {
-   *   "d": {
-   *     "__metadata": {
-   *       "uri": "https://sapes1.sapdevcenter.com:443/sap/opu/odata/sap/SALESORDERXX/SOHeaders('0000000001')",
-   *       "type": "SALESORDERXX.SOHeader"
-   *     },
-   *     "OrderId": "0000000001",
-   *     "DocumentType": "TA",
-   *     "DocumentDate": "/Date(1297382400000)/",
-   *     "CustomerId": "0000100001",
-   *     "SOItems": {
-   *       "__deferred": {
-   *         "uri": "https://sapes1.sapdevcenter.com:443/sap/opu/odata/sap/SALESORDERXX/SOHeaders('0000000001')/SOItems"
-   *       }
-   *     }
-   *   }
-   * }
-	 * </code></pre>
-	 * @returns {{d: any}}
-	 **/
-	getRequestResult():any {
-		if(this.data) {
-			var retValue:{d: any} = {d: {}};
-			retValue.d = this.data;
-			for(var prop in retValue.d) {
-				if(retValue.d[prop] instanceof Date) {
-					retValue.d[prop] = "/Date(" + retValue.d[prop].getTime() + ")/"
-				}
-			}
-			return retValue;
-		} else {
-			var retValue2:{value: any} = {value: {}};
-			retValue2.value = this.value;
-			return retValue2;
-		}
 	};
 }
 
