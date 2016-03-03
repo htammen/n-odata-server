@@ -45,8 +45,8 @@ export interface LoopbackRelationDefinition {
 	type: string,
 	keyFrom: string,
 	keyTo: string,
-	modelFrom: any,
-	modelTo: any,
+	modelFrom: LoopbackModelClass,
+	modelTo: LoopbackModelClass,
 	multiple: boolean,
 	name: string,
 	options: Object,
@@ -60,6 +60,7 @@ export interface LoopbackModelClass {
 	name: string,
 	definition: any,
 	modelName: string,
+	pluralModelName: string,
 
 	forEachProperty: Function,
 	getIdName: Function,

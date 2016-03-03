@@ -22,8 +22,10 @@ export class BaseUpdateRequestHandler extends BaseRequestHandler {
 	 * @private
 	 */
 	_upsertInlineRelations(instance:any, ModelClass:LoopbackModelClass, reqObj:Object) {
+		var that = this;
 		return new Promise((resolve, reject) => {
 			var arrRelPromises:Array<any> = [];
+			// collect  all relation requests in an array of relation promises. These will be processed later
 			for (var rel in ModelClass.relations) {
 				arrRelPromises.push(new Promise((resolve, reject) => {
 					var relDefinition:LoopbackRelationDefinition = ModelClass.relations[rel];
@@ -84,6 +86,20 @@ export class BaseUpdateRequestHandler extends BaseRequestHandler {
 							}).catch(err => {
 								reject(err);
 							})
+						} else if (relDefinition.type === lb_constants.LB_REL_BELONGSTO) {
+							// loop through all objects of this relation that were transmitted with the request and create a promise for each one
+							var reqObjInstance:any = reqObj[rel];
+							if(reqObjInstance.__metadata && reqObjInstance.__metadata.uri) {
+								var idOfNewOwner = that._getIdOfNewOwner(reqObjInstance.__metadata.uri, relDefinition);
+								instance.updateAttribute(relDefinition.keyFrom, idOfNewOwner).then((udatedInstance) => {
+									this.logger.trace("sucessfully updated belongsTo relation %s for object %s of model class %s. The new owner has id %s", rel, instance.getId(), ModelClass.modelName, idOfNewOwner);
+									resolve();
+								}).catch((err) => {
+									// Update failed.
+									this.logger.trace("error while updating belongsTo relation %s for object %s of model class %s. Error message: %s", rel, instance.getId(), ModelClass.modelName, err.message);
+									reject();
+								})
+							}
 						}
 					} else {
 						// There is not relation "rel" transmitted with the request. Just resolve the Promise
@@ -91,6 +107,7 @@ export class BaseUpdateRequestHandler extends BaseRequestHandler {
 					}
 				}));
 			}
+			// Process all collected relation promises
 			if(arrRelPromises.length > 0) {
 				Promise.all(arrRelPromises).then((arrPromiseResults) => {
 					resolve(204);
@@ -102,5 +119,25 @@ export class BaseUpdateRequestHandler extends BaseRequestHandler {
 				resolve(204);
 			}
 		})
+	}
+
+	/**
+	 * Retrieve the id out of the uri to the owner of a belongsTo relation
+	 * @param uri URI to the owner object
+	 * @param relDefinition The relation definition
+	 * @private
+   */
+	_getIdOfNewOwner(uri: string, relDefinition: LoopbackRelationDefinition): any {
+		var retValue;
+		var modelToClass: string = relDefinition.modelTo.pluralModelName;
+		if(!modelToClass) {
+			modelToClass = relDefinition.modelTo.modelName + "s";
+		}
+		var idx:number = uri.indexOf(modelToClass)
+		if(idx > -1) {
+			var idxOfClosingParanthese = uri.indexOf(")", idx);
+			retValue = uri.substring(idx+modelToClass.length+1, idxOfClosingParanthese);
+		}
+		return retValue;
 	}
 }

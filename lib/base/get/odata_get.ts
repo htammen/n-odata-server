@@ -10,6 +10,8 @@ import constants = require('../../constants/odata_constants');
 import req_header = require('../../common/odata_req_header');
 import {LoopbackFilter} from "../../types/loopbacktypes";
 import {EntityResult} from "../BaseRequestHandler";
+import {LoopbackRelationDefinition} from "../../types/loopbacktypes";
+import {LoopbackModelClass} from "../../types/loopbacktypes";
 
 /** Interface for metadata of OData */
 interface Metadata {
@@ -68,6 +70,7 @@ export class CollectionResult {
 		this.data.forEach(function (obj, idx) {
 			var tmpObj = obj.toJSON();
 			for(var prop in tmpObj) {
+				// convert dates into OData date format
 				if(tmpObj[prop] instanceof Date) {
 					tmpObj[prop] = "/Date(" + tmpObj[prop].getTime() + ")/"
 				}
@@ -336,9 +339,11 @@ export class ODataGetBase extends BaseRequestHandler.BaseRequestHandler {
 										reject(500);
 									} else {
 										console.log(res);
+										var relDefinition:LoopbackRelationDefinition = ModelClass.relations[arrParamToken[2]];
+										var modelTo:LoopbackModelClass = relDefinition.modelTo;
 										result.value = [];
 										res.forEach((obj, idx, arr) => {
-											var url = commons.getBaseURL(req) + '/' + arrParamToken[2] + '(' + obj.getId() + ')'
+											var url = commons.getBaseURL(req) + '/' + modelTo.pluralModelName + '(' + obj.getId() + ')'
 											result.value.push({url: url});
 										});
 										resolve(result);

@@ -8,10 +8,9 @@ There are already some solutions at npm. These did not fulfill our requirements 
 * Support for nearly the complete OData API
 
 ## Current state of the project
-__At the moment we are in an early state. Even though we are working hard we need some more time to have a version that
+__Even though we are working hard we need some more time to have a version that
 supports most of the OData specification.
-If you need a solution that supports all or allmost all OData features either contribute to the project,
-be patient or have a look for the other solutions at the market.__
+Please stay tuned or contribute to the project if you want quicker results.__
 
 If you want to contribute send us an email to [`h.tammen@tammen-it-solutions.de`](mailto:h.tammen@tammen-it-solutions.de).
 We are collaborating via a [Slack Team](https://slack.com/) and will invite you to this as soon as we receive a request for contribution.
@@ -189,6 +188,9 @@ Following you see the default configuration that is used if the above mentioned 
 }
 ```
 
+## Documentation
+To read more about the n-odata-server you should have a look at the [wiki](https://github.com/htammen/n-odata-server/wiki) or you can have a
+look at this [presentation](http://prezi.com/dznggtj0zjlo/?utm_campaign=share&utm_medium=copy) for a not very technical overview
 
 ## License
 This project is licensed under the MIT license. See the [LICENSE](LICENSE) file for more info.

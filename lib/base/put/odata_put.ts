@@ -15,6 +15,8 @@ import {LoopbackModelDefinition} from "../../types/loopbacktypes";
 import {LoopbackModelClass} from "../../types/loopbacktypes";
 import {BaseUpdateRequestHandler} from "../BaseUpdateRequestHandler";
 
+import * as express from "express";
+
 var logger = log4js.getLogger("put");
 
 export class ODataPutBase extends BaseUpdateRequestHandler {
@@ -31,13 +33,14 @@ export class ODataPutBase extends BaseUpdateRequestHandler {
 	 * @param res
 	 * @private
 	 */
-	_handlePut(req, res) {
+	_handlePut(req:express.Request, res:express.Response) {
 		logger.trace("handle put");
 		return new Promise((resolve, reject) => {
 			// set OData-Version in response header
 			this.setODataVersion(res, constants.ODATA_VERSION_2);
 
-			commons.getModelClass(req.app.models, req.params[0]).then(((ModelClass:LoopbackModelClass) => {
+			var req_app: any = req.app;
+			commons.getModelClass(req_app.models, req.params[0]).then(((ModelClass:LoopbackModelClass) => {
 
 				if (ModelClass) {
 					var id = commons.getIdFromUrlParameter(req.params[0]);
@@ -103,14 +106,15 @@ export class ODataPutBase extends BaseUpdateRequestHandler {
 	 * @param res
 	 * @private
 	 */
-	_handlePatch(req, res) {
+	_handlePatch(req:express.Request, res:express.Response) {
 		// TODO: Currently the only thing the handlePatch differentiates from handlePut is that no default value is sett. Is this corrent?
 		logger.trace("handle patch / merge");
 		return new Promise((resolve, reject) => {
 			// set OData-Version in response header
 			this.setODataVersion(res, constants.ODATA_VERSION_2);
 
-			commons.getModelClass(req.app.models, req.params[0]).then((ModelClass:LoopbackModelClass) => {
+			var req_app: any = req.app;
+			commons.getModelClass(req_app.models, req.params[0]).then((ModelClass:LoopbackModelClass) => {
 
 				if (ModelClass) {
 					var id = commons.getIdFromUrlParameter(req.params[0]);

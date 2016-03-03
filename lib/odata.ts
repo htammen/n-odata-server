@@ -1,3 +1,4 @@
+/// <reference path="../typings/main.d.ts" />
 /**
  * This module implements the odata server functionality
  * At the moment it is implemented as local loopback component
@@ -19,6 +20,8 @@ import ODataPostV2 = require('./v2/post/odata_post');
 import ODataDeleteV2 = require('./v2/delete/odata_delete');
 import ODataPutV2 = require('./v2/put/odata_put');
 import fs = require( 'fs' );
+
+import * as express from "express";
 
 // Configure logging
 // TODO: make logging more flexible, e.g. let user configure the name and location of the log file via component configuration
@@ -80,7 +83,7 @@ function _handleODataVersion2(loopbackApplication, options, oDataServerConfig) {
 	common.setConfig(oDataServerConfig);
 	this.oDataGet.setConfig(oDataServerConfig);
 
-	loopbackApplication.use(options.path, function (req, res, next) {
+	loopbackApplication.use(options.path, function (req:express.Request, res:express.Response, next) {
 		try {
 			switch (req.method) {
 				case 'GET':
@@ -104,7 +107,7 @@ function _handleODataVersion2(loopbackApplication, options, oDataServerConfig) {
 								break;
 
 							default:
-								res.status(500).send("HTTP verb %s not supported by POST tunneling", x_http_method);
+								res.status(500).send("HTTP verb " + x_http_method + " not supported by POST tunneling");
 						}
 					} else {
 						_handlePost.call(this, req, res);
@@ -158,7 +161,7 @@ function _handleODataVersion4(loopbackApplication, options, oDataServerConfig) {
 	common.setConfig(oDataServerConfig);
 	this.oDataGet.setConfig(oDataServerConfig);
 
-	loopbackApplication.use(options.path, function (req, res, next) {
+	loopbackApplication.use(options.path, function (req:express.Request, res:express.Response, next) {
 		try {
 			switch (req.method) {
 				case 'GET':
@@ -182,7 +185,7 @@ function _handleODataVersion4(loopbackApplication, options, oDataServerConfig) {
 								break;
 
 							default:
-								res.status(500).send("HTTP verb %s not supported by POST tunneling", x_http_method);
+								res.status(500).send("HTTP verb " + x_http_method + " not supported by POST tunneling");
 						}
 					} else {
 						_handlePost.call(this, req, res);
@@ -225,7 +228,7 @@ function _handleODataVersion4(loopbackApplication, options, oDataServerConfig) {
  * @param  {[type]} res [description]
  * @return {[type]}     [description]
  */
-function _handleGet(req, res) {
+function _handleGet(req:express.Request, res:express.Response) {
 	// delegate to get module
 	this.oDataGet.handleGet(req, res);
 }
@@ -237,7 +240,7 @@ function _handleGet(req, res) {
  * @param  {[type]} res [description]
  * @return {[type]}     [description]
  */
-function _handlePost(req, res) {
+function _handlePost(req:express.Request, res:express.Response) {
 	// delegate to post module
 	this.oDataPost.handlePost(req, res);
 }
@@ -251,7 +254,7 @@ function _handlePost(req, res) {
  * @param res
  * @private
  */
-function _handlePut(req, res) {
+function _handlePut(req:express.Request, res:express.Response) {
 	// delegate to put module
 	this.oDataPut.handlePut(req, res);
 }
@@ -263,7 +266,7 @@ function _handlePut(req, res) {
  * @param res
  * @private
  */
-function _handlePatch(req, res) {
+function _handlePatch(req:express.Request, res:express.Response) {
 	// delegate to put module
 	this.oDataPut.handlePatch(req, res);
 }
@@ -277,7 +280,7 @@ function _handlePatch(req, res) {
  * @param res
  * @private
  */
-function _handleMerge(req, res) {
+function _handleMerge(req:express.Request, res:express.Response) {
 	// delegate to put module
 	this.oDataPut.handleMerge(req, res);
 }
@@ -289,7 +292,7 @@ function _handleMerge(req, res) {
  * @param res
  * @private
  */
-function _handleDelete(req, res) {
+function _handleDelete(req:express.Request, res:express.Response) {
 	// delegate to delete module
 	this.oDataDelete.handleDelete(req, res);
 }
