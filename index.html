@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en-us">
+  <head>
+    <meta charset="UTF-8">
+    <title>n-odata-server by htammen</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" type="text/css" href="stylesheets/normalize.css" media="screen">
+    <link href='https://fonts.googleapis.com/css?family=Open+Sans:400,700' rel='stylesheet' type='text/css'>
+    <link rel="stylesheet" type="text/css" href="stylesheets/stylesheet.css" media="screen">
+    <link rel="stylesheet" type="text/css" href="stylesheets/github-light.css" media="screen">
+  </head>
+  <body>
+    <section class="page-header">
+      <h1 class="project-name">n-odata-server</h1>
+      <h2 class="project-tagline">Node.js OData Server for loopback.io framework</h2>
+      <a href="https://github.com/htammen/n-odata-server" class="btn">View on GitHub</a>
+      <a href="https://github.com/htammen/n-odata-server/zipball/master" class="btn">Download .zip</a>
+      <a href="https://github.com/htammen/n-odata-server/tarball/master" class="btn">Download .tar.gz</a>
+    </section>
+
+    <section class="main-content">
+      <h1>
+<a id="n-odata-server-the-node-odata-server-for-the-loopback-framework" class="anchor" href="#n-odata-server-the-node-odata-server-for-the-loopback-framework" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>n-odata-server, The node OData server for the loopback framework</h1>
+
+<p>This project has been started to develop an <a href="http://www.odata.org/">OData</a> server for node.js.
+There are already some solutions at npm. These did not fulfill our requirements which are</p>
+
+<ul>
+<li>Support for several backend systems (databases)</li>
+<li>Support for local file system database (light weight)</li>
+<li>Support for nearly the complete OData API</li>
+</ul>
+
+<h2>
+<a id="current-state-of-the-project" class="anchor" href="#current-state-of-the-project" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Current state of the project</h2>
+
+<p><strong>Even though we are working hard we need some more time to have a version that
+supports most of the OData specification.
+Please stay tuned or contribute to the project if you want quicker results.</strong></p>
+
+<p>If you want to contribute send us an email to <a href="mailto:h.tammen@tammen-it-solutions.de"><code>h.tammen@tammen-it-solutions.de</code></a>.
+We are collaborating via a <a href="https://slack.com/">Slack Team</a> and will invite you to this as soon as we receive a request for contribution.
+We manage our tasks via <a href="https://trello.com">Trello</a>. We will also authorize you to our Trello board if you want to contribute to the project.</p>
+
+<p>We have currently implemented some very basic OData functionality (see below) that allows you to use some basic CRUD operations on your data. We try to implement some more useful functionality soon.</p>
+
+<h3>
+<a id="release-notes" class="anchor" href="#release-notes" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Release Notes</h3>
+
+<p>To see what's implemented yet have a look at our <a href="https://github.com/htammen/n-odata-server/wiki/Release%20Notes">release notes</a></p>
+
+<h2>
+<a id="background" class="anchor" href="#background" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Background</h2>
+
+<h3>
+<a id="odata" class="anchor" href="#odata" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>OData</h3>
+
+<p>OData is a protocol for standardized access to <a href="https://en.wikipedia.org/wiki/Representational_state_transfer">RESTful</a> webservices. It initially
+was developed by Microsoft as Open Source project. Not very much later SAP jumped onto the train. At the moment primarily Microsoft and SAP work on the <a href="https://www.oasis-open.org/committees/tc_home.php?wg_abbrev=odata">specification</a> under the hood of OASIS.
+Since it's early days in 2009 a lot of other companies have committed their strategy to OData or at least support OData.
+To name a few there are IBM, Salesforce, Red Hat, CA, Citrix.
+If you are totally new to OData this <a href="http://de.slideshare.net/metadaddy/odata-a-standard-api-for-data-access">presentation</a>
+might give you a quick inside into it.</p>
+
+<h4>
+<a id="odata-versions" class="anchor" href="#odata-versions" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>OData versions</h4>
+
+<p>In the meantime the current version of Odata is 4.0. We will try to support this version. But
+because we primarily are interested in using our server with the frontend framework SAPUI5/OpenUI5 which still works
+on V2 we will support version 2.0 at first.</p>
+
+<h4>
+<a id="odata-formats" class="anchor" href="#odata-formats" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>OData formats</h4>
+
+<p>The OData specification suggests to support <a href="http://docs.oasis-open.org/odata/odata-atom-format/v4.0/odata-atom-format-v4.0.html">Atom</a>
+as well as <a href="http://docs.oasis-open.org/odata/odata-json-format/v4.0/odata-json-format-v4.0.html">JSON</a>.
+One of these formats must be supported. We will <strong>probably only support the JSON format</strong> as it is much more lightweight and
+therefore easier to implement.</p>
+
+<h3>
+<a id="loopback" class="anchor" href="#loopback" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Loopback</h3>
+
+<p>This project relies on and requires <a href="http://loopback.io/">Loopback</a> a very mature node.js framework for
+development of database independent node.js web applications. Our project extends this framework
+with the ability to expose it's data via OData. Loopback already exposes the data via a proprietary RESTful API. If you are fine with this just use it.
+But if you want to base your projects on standards use OData and our loopback add-on.</p>
+
+<h2>
+<a id="usage" class="anchor" href="#usage" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Usage</h2>
+
+<h3>
+<a id="prerequisites" class="anchor" href="#prerequisites" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Prerequisites</h3>
+
+<p>This component is not usable out of the box. You already need to have a loopback application. You can thent add this
+component to the existing application. Look <a href="http://loopback.io/getting-started/">here</a> for details on installing and
+creating a loopback application.</p>
+
+<h3>
+<a id="installation" class="anchor" href="#installation" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Installation</h3>
+
+<p>Install the component like any other node package with npm</p>
+
+<p>      <code>npm install n-odata-server --save</code></p>
+
+<h3>
+<a id="activation" class="anchor" href="#activation" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Activation</h3>
+
+<p>To use this loopback component you have to activate it in the file
+      <code>server/component-config.json</code></p>
+
+<p>of your project. Add the following lines to this file</p>
+
+<pre><code>  "n-odata-server": {
+    "path": "/odata/*",
+    "odataversion": "2"
+  }
+</code></pre>
+
+<p>If you are not happy with the prefix <code>odata</code> you can of course use another one. Just exchange <code>odata</code> with you prefix
+e.g. <code>myservice</code>. Then your requests to the odata service have to start with <code>/myservice/</code>.
+The line <code>"odataversion": "2"</code> means that the server works with OData V2. We highly recommend to use this version at the
+moment.</p>
+
+<h3>
+<a id="firing-odata-requests" class="anchor" href="#firing-odata-requests" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Firing OData requests</h3>
+
+<p>To fire your OData request simply start your server application with</p>
+
+<p>      <code>node .</code></p>
+
+<p>go to your browser and enter</p>
+
+<p>      <code>http://0.0.0.0:3000/odata/</code></p>
+
+<p>This will return the OData service document from which you can see which collections / entitysets are available in
+your OData server.</p>
+
+<pre><code>{
+  "@odata.context": "http://0.0.0.0:3000/odata/$metadata",
+  "value": [
+    {
+      "name": "people",
+      "url": "people"
+    }
+  ]
+}
+</code></pre>
+
+<p>In my case there is <code>people</code> entityset. When firing the URL</p>
+
+<p>      <code>http://0.0.0.0:3000/odata/people</code></p>
+
+<p>I get the data for this collection</p>
+
+<pre><code>{
+  "value": [
+    {
+      "firstname": "Helmut",
+      "lastname": "Tammen",
+      "id": 2
+    },
+    {
+      "firstname": "Franz",
+      "lastname": "Frosch",
+      "gender": "male",
+      "age": 65,
+      "id": 3
+    },
+    {
+      "firstname": "Mary",
+      "lastname": "Friday",
+      "gender": "female",
+      "age": 10,
+      "id": 4
+    },
+    {
+      "firstname": "Johannes",
+      "lastname": "Hamel",
+      "id": 8
+    }
+  ]
+}
+</code></pre>
+
+<h3>
+<a id="supported-requests" class="anchor" href="#supported-requests" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Supported requests</h3>
+
+<p>Currently basic requests for the following http verbs are supported</p>
+
+<ul>
+<li>
+<code>GET</code>: Get all records of an entityset or a single record</li>
+<li>
+<code>POST</code>: Create a new entry in your database</li>
+<li>
+<code>DELETE</code>: Delete an entry from your database</li>
+<li>
+<code>PATCH</code>: Update an entry in your database</li>
+<li>
+<code>MERGE</code>: Update an entry in your database (to be OData V2.0 compatible)</li>
+<li>
+<code>PUT</code>: Update an entry in your database</li>
+</ul>
+
+<p>If you encounter a lack in the implementation this is either not implemented yet or you found an error.
+In both cases you have the following opportunities</p>
+
+<ul>
+<li>fork the repo, fix the problem and raise a pull request so that we can take it over into the master branch of our project</li>
+<li>create an issue on Github</li>
+<li>wait until we came to the same error/lack and fixed it.</li>
+</ul>
+
+<p>If you are not familiar with OData request have a look at the above mentioned OData resources.</p>
+
+<h3>
+<a id="odata-restrictions" class="anchor" href="#odata-restrictions" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>OData restrictions</h3>
+
+<p>Currently we don't support</p>
+
+<ul>
+<li>Batch requests. You have to configure your frontend to not using these. In SAPUI5 / OpenUI5 this can be done by setting a
+flag</li>
+<li>Atom / XML request. As mentioned above we only support JSON.</li>
+</ul>
+
+<h3>
+<a id="logging" class="anchor" href="#logging" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Logging</h3>
+
+<p>We use <a href="https://github.com/nomiddlename/log4js-node">log4js</a> for internal logging purposes.
+Per default we log to the console and to a file named <code>n_odata_server.log</code> that is created in the root directory of your
+development project.
+The default logging configuration is quite verbose. If you don't want to see that much information you can adjust it.
+Create a file named <code>n_odata_server_log.json</code> in the root directory of your project and configure your logging preferences.
+See the log4js documentation for more details.
+Following you see the default configuration that is used if the above mentioned file does not exist.</p>
+
+<pre><code>{
+    "appenders": [
+        { "type": "console" },
+        {
+            "type": "file",
+            "filename": "n_odata_server.log",
+            "maxLogSize": 1048576
+        }
+    ],
+    "replaceConsole": true,
+
+    "levels": {
+        "[all]": "TRACE"
+    }
+}
+</code></pre>
+
+<h2>
+<a id="documentation" class="anchor" href="#documentation" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Documentation</h2>
+
+<p>To read more about the n-odata-server you should have a look at the <a href="https://github.com/htammen/n-odata-server/wiki">wiki</a> or you can have a
+look at this <a href="http://prezi.com/dznggtj0zjlo/?utm_campaign=share&amp;utm_medium=copy">presentation</a> for a not very technical overview</p>
+
+<h2>
+<a id="license" class="anchor" href="#license" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>License</h2>
+
+<p>This project is licensed under the MIT license. See the <a href="LICENSE">LICENSE</a> file for more info.</p>
+
+      <footer class="site-footer">
+        <span class="site-footer-owner"><a href="https://github.com/htammen/n-odata-server">n-odata-server</a> is maintained by <a href="https://github.com/htammen">htammen</a>.</span>
+
+        <span class="site-footer-credits">This page was generated by <a href="https://pages.github.com">GitHub Pages</a> using the <a href="https://github.com/jasonlong/cayman-theme">Cayman theme</a> by <a href="https://twitter.com/jasonlong">Jason Long</a>.</span>
+      </footer>
+
+    </section>
+
+  
+  </body>
+</html>
