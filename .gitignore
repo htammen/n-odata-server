@@ -21,3 +21,5 @@ npm-debug.log
 *.js.map
 typings
 docu/Technical
+coverage
+results.txt

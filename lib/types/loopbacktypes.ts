@@ -4,7 +4,7 @@ export interface LoopbackFilter {
 	fields?: any,
 		include?: any,
 		limit?: number,
-		order?: string,
+		order?: Array,
 		skip?: number,
 		where?: any
 }

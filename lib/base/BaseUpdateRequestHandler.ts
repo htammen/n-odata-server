@@ -24,6 +24,9 @@ export class BaseUpdateRequestHandler extends BaseRequestHandler {
 	_upsertInlineRelations(instance:any, ModelClass:LoopbackModelClass, reqObj:Object) {
 		var that = this;
 		return new Promise((resolve, reject) => {
+			if(!instance || !ModelClass || !reqObj) {
+				reject("none of the parameters must be null or undefined");
+			}
 			var arrRelPromises:Array<any> = [];
 			// collect  all relation requests in an array of relation promises. These will be processed later
 			for (var rel in ModelClass.relations) {
@@ -136,7 +139,9 @@ export class BaseUpdateRequestHandler extends BaseRequestHandler {
 		var idx:number = uri.indexOf(modelToClass)
 		if(idx > -1) {
 			var idxOfClosingParanthese = uri.indexOf(")", idx);
-			retValue = uri.substring(idx+modelToClass.length+1, idxOfClosingParanthese);
+			if(idxOfClosingParanthese > -1) {
+				retValue = uri.substring(idx + modelToClass.length + 1, idxOfClosingParanthese);
+			}
 		}
 		return retValue;
 	}

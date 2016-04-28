@@ -1,6 +1,7 @@
 /// <reference path="../../typings/main.d.ts" />
 import constants = require('../constants/odata_constants');
 import enums = require('../constants/odata_enums');
+import lbConstants = require('../constants/loopback_constants');
 import {LoopbackModelClass} from "../types/loopbacktypes";
 
 var oDataServerConfig;
@@ -18,7 +19,8 @@ export = {
 	getRequestType: _getRequestType,
 	getIdFromUrlParameter: _getIdFromUrlParameter,
 	getPluralForModel: _getPluralForModel,
-	getModelClass: _getModelClass
+	getModelClass: _getModelClass,
+	getRequestModelClass: _getRequestModelClass
 };
 
 
@@ -93,13 +95,31 @@ function _getRequestType(req) {
  */
 function _isRequestCollection(req) {
 	var retValue = false;
-	var reqParam = req.params[0];
+	var reqParts = /^([^/(]+)(?:[(]([^)]+)[)])?(?:[/]([A-Za-z]+))?/g.exec(req.params[0]);
+	// reqParts = [full_match, model, id, property]
+	// util.inspect(reqParts);
 
 	var models = req.app.models();
-	models.forEach(function(model) {
+	models.forEach(function (model) {
 		var plural = _getPluralForModel(model);
-		if(plural === reqParam) {
-			retValue = true;
+		if (plural === reqParts[1]) {
+			//console.log("model found: " + plural);
+			if (reqParts[2] && reqParts[3]) {
+				//console.log("navigation by key and property");
+				var modelRel = model.definition.settings.relations;
+				//in case property is a relation of type 'hasMany'
+				if (modelRel && modelRel[reqParts[3]] && modelRel[reqParts[3]].type === lbConstants.LB_REL_HASMANY) {
+					//console.log("property is a collection");
+					retValue = true;
+				} else {
+					//console.log("property is a entity");
+				}
+			} else if (!reqParts[2]) {
+				//console.log("collection is requested directly");
+				retValue = true;
+			} else {
+				//console.log("request is not a collection");
+			}
 		}
 	});
 	return retValue;
@@ -112,10 +132,33 @@ function _isRequestCollection(req) {
  */
 function _isRequestEntity(req) {
 	var retValue = false;
-	var param0 = req.params[0];
-	if( param0.indexOf('(') !== -1) {
-		retValue = true;
-	}
+	var reqParts = /^([^/(]+)(?:[(]([^)]+)[)])?(?:[/]([A-Za-z]+))?/g.exec(req.params[0]);
+			// reqParts = [full_match, model, id, property]
+			//util.inspect(reqParts);
+	var models = req.app.models();
+	models.forEach(function (model) {
+		var plural = _getPluralForModel(model);
+		if (plural === reqParts[1]) {
+			//console.log("model found: " + plural);
+			if (reqParts[2] && reqParts[3]) {
+				//console.log("navigation by key and property");
+				var modelRel = model.definition.settings.relations;
+				//in case property is a relation of type 'hasMany'
+				if (modelRel && modelRel[reqParts[3]] && (modelRel[reqParts[3]].type === lbConstants.LB_REL_BELONGSTO || modelRel[reqParts[3]].type === lbConstants.LB_REL_HASONE)) {
+					//console.log("property is a entity");
+					retValue = true;
+				} else {
+					//console.log("property is a collection");
+				}
+			} else if (reqParts[2]) {
+				//console.log("entity is requested by id");
+				retValue = true;
+			} else {
+				//console.log("collection is requested directly");
+			}
+
+		}
+	});
 	return retValue;
 }
 
@@ -155,6 +198,59 @@ function _getIdFromUrlParameter(param0) {
 		retValue = retValue.substr(0, retValue.length-1);
 	}
 	return retValue;
+}
+
+
+/**
+ * get the Model for request uri (e.g.: steps(1)/children).
+ * @param  {[type]} models            [description]
+ * @param  {[type]} requestUri      the request uri
+ * @return {[type]}                Promise that resolves to a ModelClass
+ */
+function _getRequestModelClass(models, requestUri) {
+	var reqParts = /^([^/(]+)(?:[(]([^)]+)[)])?(?:[/]([A-Za-z]+))?/g.exec(requestUri);
+	if (!reqParts[3]) {
+		return _getModelClass(models, reqParts[1]);
+	} else {
+		return new Promise(function (resolve, reject) {
+			_getModelClass(models, reqParts[1]).then(function (BaseModelClass) {
+				//console.log(util.inspect(BaseModelClass.defintion.settings.relations));
+				var modelRel = BaseModelClass.settings.relations;
+				if (modelRel && modelRel[reqParts[3]]) {
+					var oFilter = {}, sForeignKey = modelRel[reqParts[3]].foreignKey;
+					if (sForeignKey == "") {
+						sForeignKey = reqParts[3] + "Id";
+					}
+
+					switch (modelRel[reqParts[3]].type) {
+						case lbConstants.LB_REL_HASMANY:
+							oFilter[sForeignKey] = reqParts[2];
+							_getModelClass(models, modelRel[reqParts[3]].model).then(function (ModelClass) {
+								resolve({modelClass: ModelClass, foreignKeyFilter: oFilter});
+							});
+							break;
+						case lbConstants.LB_REL_BELONGSTO:
+							BaseModelClass.findById(reqParts[2]).then(function (instance) {
+								if (instance) {
+									oFilter["_id"] = instance[sForeignKey];
+									_getModelClass(models, modelRel[reqParts[3]].model).then(function (ModelClass) {
+										resolve({modelClass: ModelClass, foreignKeyFilter: oFilter});
+									});
+								} else {
+									reject();
+								}
+							});
+							break;
+						//TODO: lbConstants.LB_REL_HASONE
+					}
+
+
+				} else {
+					resolve(BaseModelClass);
+				}
+			});
+		});
+	}
 }
 
 /**

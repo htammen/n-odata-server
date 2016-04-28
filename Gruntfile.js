@@ -20,7 +20,7 @@ module.exports = function(grunt) {
 		mochaTest: {
 			test: {
 				options: {
-					reporter: 'spec',
+					rorter: 'spec',
 					captureFile: 'results.txt', // Optionally capture the reporter output to a file
 					quiet: false, // Optionally suppress output to standard out (defaults to false)
 					clearRequireCache: false // Optionally clear the require cache before running tests (defaults to false)
@@ -34,7 +34,7 @@ module.exports = function(grunt) {
 	grunt.loadNpmTasks("grunt-ts");
 	// Add the grunt-mocha-test tasks.
 	grunt.loadNpmTasks('grunt-mocha-test');
-	
+
 	grunt.registerTask("default", ["ts"]);
 	grunt.registerTask("test", ["mochaTest"]);
 };

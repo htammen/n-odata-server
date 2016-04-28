@@ -130,7 +130,11 @@ export class ODataGetBase extends BaseRequestHandler.BaseRequestHandler {
 	_getCollectionData(req, res) {
 		return new Promise((resolve, reject) => {
 			//DONE: The odata.nextLink annotation MUST be included in a response that represents a partial result. "@odata.nextLink": "...?$skiptoken=342r89"
-			commons.getModelClass(req.app.models, req.params[0]).then(((ModelClass:any) => {
+			commons.getRequestModelClass(req.app.models, req.params[0]).then((function (oResult) {
+				var ModelClass = oResult;
+				if(ModelClass.modelClass) {
+					ModelClass = ModelClass.modelClass;
+				}
 				try {
 					if (ModelClass) {
 						// Retrieve odata.maxpagesize from Prefer header of the request
@@ -145,7 +149,13 @@ export class ODataGetBase extends BaseRequestHandler.BaseRequestHandler {
 						var filter:LoopbackFilter = {};
 						//TODO: apply $filter parameter
 						filter = _applyFilter.call(this, req, filter);
-
+						if(oResult.foreignKeyFilter) {
+							if(!filter.where) {
+								filter.where = oResult.foreignKeyFilter;
+							} else {
+								filter.where = {"and": [filter.where, oResult.foreignKeyFilter]};
+							}
+						}
 						//TODO: apply $search parameter
 
 						// if user appended the $count parameter she just wants the number of records
@@ -208,11 +218,13 @@ export class ODataGetBase extends BaseRequestHandler.BaseRequestHandler {
 
 							// apply $select URL parameter
 							filter = _applySelect.call(this, req, filter);
-
 							// apply $expand URL parameter
 							filter = _applyExpand.call(this, req, filter);
-
 							console.log("filter: " + JSON.stringify(filter));
+
+							// apply $orderBy
+							filter = _applyOrderBy.call(this, req, filter);
+
 
 							// Now we call the find method of the ModelClass with filter definition
 							var result:CollectionResult = new CollectionResult();
@@ -220,7 +232,7 @@ export class ODataGetBase extends BaseRequestHandler.BaseRequestHandler {
 								// add metadata
 								data.forEach(((object, idx, arr) => {
 									object.__data.__metadata = {
-										uri: commons.getBaseURL(req) + '/' + commons.getPluralForModel(ModelClass) + '(' + object.getId() + ')',
+										uri: commons.getBaseURL(req) + '/' + commons.getPluralForModel(ModelClass) + '(\'' + object.getId() + '\')',
 										type: constants.ODATA_NAMESPACE + '.' + ModelClass.definition.name
 									};
 									// add deferred relations
@@ -244,6 +256,9 @@ export class ODataGetBase extends BaseRequestHandler.BaseRequestHandler {
 								} else {
 									resolve(result);
 								}
+							}).catch(err => {
+								console.error(err);
+								reject(err);
 							});
 
 
@@ -288,15 +303,25 @@ export class ODataGetBase extends BaseRequestHandler.BaseRequestHandler {
 			var arrParams0 = req.params[0].split('/');
 			if (arrParams0 && arrParams0[arrParams0.length - 1] === '$count') {
 				// the collection has to be in the first part of params
-				commons.getModelClass(req.app.models, arrParams0[0]).then((ModelClass:any) => {
+				commons.getRequestModelClass(req.app.models, req.params[0]).then((oResult:any) => {
+					var ModelClass = oResult;
+					if(ModelClass.modelClass) {
+						ModelClass = ModelClass.modelClass;
+					}
 					if (ModelClass) {
 						if (req.accepts("text/plain")) {
-							ModelClass.count().then(function (count) {
-								resolve(count);
+							ModelClass.count(oResult.foreignKeyFilter, function(err, count) {
+								if(!err) {
+									resolve(count);
+								} else {
+									reject(err);
+								}
 							})
 						} else {
 							reject(415);
 						}
+					} else {
+						reject(415);
 					}
 				})
 			} else {
@@ -320,58 +345,73 @@ export class ODataGetBase extends BaseRequestHandler.BaseRequestHandler {
 			// extract the id from the request
 			var id = commons.getIdFromUrlParameter(arrParamToken[0]);
 			var collection = arrParamToken[0].substr(0, param0.indexOf('('));
-			commons.getModelClass(req.app.models, arrParamToken[0]).then( ((ModelClass:any) => {
-				if (ModelClass) {
-					// apply $select URL parameter
-					var filter = _applySelect(req);
-					// apply $expand URL parameter
-					filter = _applyExpand.call(this, req, filter);
-
-					ModelClass.findById(id, filter).then( ((instance) => {
-						if (instance) {
-							// Handling $links
-							if(arrParamToken[1] === "$links") {
-								var result:EntityResult = new EntityResult();
-								// retrieve the relations from the ModelClass instance
-								instance[arrParamToken[2]]( (err, res) => {
-									if(err){
-										console.error(err);
-										reject(500);
-									} else {
-										console.log(res);
-										var relDefinition:LoopbackRelationDefinition = ModelClass.relations[arrParamToken[2]];
-										var modelTo:LoopbackModelClass = relDefinition.modelTo;
-										result.value = [];
-										res.forEach((obj, idx, arr) => {
-											var url = commons.getBaseURL(req) + '/' + modelTo.pluralModelName + '(' + obj.getId() + ')'
-											result.value.push({url: url});
-										});
-										resolve(result);
-									}
-								});
-
-							} else {
-								// add deferred relations
-								for(var rel in ModelClass.relations) {
-									this._createDeferredObject(instance, rel, req, ModelClass, id);
-								}
-								// Handling regular Entity requests
-								var result:EntityResult = new EntityResult();
-								result.data = instance.toJSON();
-								resolve(result);
-							}
-						} else {
-							console.error('entity data for request ' + req.originalUrl + ' was not found');
-							reject(404);
-						}
-					}).bind(this)).catch(err => {
-						reject(err);
-					});
-
-				} else {
-					reject(404);
+			commons.getRequestModelClass(req.app.models, req.params[0]).then(((oResult:any) => {
+				var ModelClass = oResult;
+				if(ModelClass.modelClass) {
+					ModelClass = ModelClass.modelClass;
 				}
-			}).bind(this))
+				if(oResult.foreignKeyFilter) {
+					id = oResult.foreignKeyFilter[Object.keys(oResult.foreignKeyFilter)[0]];
+				}
+					if (ModelClass) {
+						// apply $select URL parameter
+						var filter = _applySelect(req);
+						// apply $expand URL parameter
+						filter = _applyExpand.call(this, req, filter);
+
+						ModelClass.findById(id, filter).then( ((instance) => {
+							if (instance) {
+								// Handling $links
+								if(arrParamToken[1] === "$links") {
+									var result:EntityResult = new EntityResult();
+									// retrieve the relations from the ModelClass instance
+									instance[arrParamToken[2]]( (err, res) => {
+										if(err){
+											console.error(err);
+											reject(500);
+										} else {
+											console.log(res);
+											var relDefinition:LoopbackRelationDefinition = ModelClass.relations[arrParamToken[2]];
+											var modelTo:LoopbackModelClass = relDefinition.modelTo;
+											result.value = [];
+											res.forEach((obj, idx, arr) => {
+												var url = commons.getBaseURL(req) + '/' + modelTo.pluralModelName + '(' + obj.getId() + ')'
+												result.value.push({url: url});
+											});
+											resolve(result);
+										}
+									});
+
+								} else {
+									// add metadata
+									instance.__data.__metadata = {
+										uri: commons.getBaseURL(req) + '/' + commons.getPluralForModel(ModelClass) + '(' + id + ')',
+										type: constants.ODATA_NAMESPACE + '.' + ModelClass.definition.name
+									};
+									// add deferred relations
+									for(var rel in ModelClass.relations) {
+										this._createDeferredObject(instance, rel, req, ModelClass, id);
+									}
+									// Handling regular Entity requests
+									var result:EntityResult = new EntityResult();
+									result.data = instance.toJSON();
+									/* TODO: metadata is currently ignored by loopback. all properties beginning with "__".
+									 * reparsing stringified instance (after .toJSON()), add them and stringify again.
+									 */
+									resolve(result);
+								}
+							} else {
+								console.error('entity data for request ' + req.originalUrl + ' was not found');
+								reject(404);
+							}
+						}).bind(this)).catch(err => {
+							reject(err);
+						});
+
+					} else {
+						reject(404);
+					}
+				}).bind(this))
 		});
 	}
 
@@ -389,7 +429,7 @@ export class ODataGetBase extends BaseRequestHandler.BaseRequestHandler {
 		if (!instance.__data[rel]) {
 			instance.__data[rel] = {
 				__deferred: {
-					uri: commons.getBaseURL(req) + '/' + commons.getPluralForModel(ModelClass) + '(' + id + ')/' + rel
+					uri: commons.getBaseURL(req) + '/' + commons.getPluralForModel(ModelClass) + '(\'' + id + '\')/' + rel
 				}
 			}
 		}
@@ -498,6 +538,43 @@ function _applyExpand(req, filter?:LoopbackFilter) {
 			} else {
 				filter.include.push(obj);
 			}
+		})
+	}
+	return filter;
+}
+
+/**
+ * Applies the $orderby URL parameter for sorting the resultset
+ * @param req
+ * @param filter
+ * @private
+ */
+function _applyOrderBy(req, filter?:LoopbackFilter) {
+	var orderByParam = req.query.$orderby;
+	filter = filter || {};
+	if (orderByParam) {
+		var orderString:string = "$orderby=" + orderByParam;
+		// parse the expandString into an ast
+		var ast:any = parser.parse(orderString);
+		if (ast.error) {
+			throw new Error(ast.error);
+		}
+		filter.order = [];
+		ast.$orderby.forEach(function(obj) {
+
+			//// does not work at the moment: ODataParser seems to have a problem here
+			//if(obj.indexOf('/') > -1) {
+			//	var objArr = obj.split('/');
+			//	var incl = {};
+			//	incl[objArr[0]] = objArr[1]
+			//	filter.order.push(incl);
+			//} else {
+				for(var prop in obj) {
+					var str:string = prop;
+					str += " " + obj[prop].toUpperCase();
+					filter.order.push(str);
+				}
+			//}
 		})
 	}
 	return filter;
