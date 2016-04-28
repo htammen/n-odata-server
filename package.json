@@ -1,12 +1,12 @@
 {
   "name": "n-odata-server",
-  "version": "0.3.8",
+  "version": "0.3.9",
   "description": "OData server for loopback framework",
   "main": "index.js",
   "scripts": {
     "_pretest": "jshint .",
-		"test": "./node_modules/.bin/istanbul test ./node_modules/.bin/_mocha test/**/*.js",
-		"coverage": "./node_modules/.bin/istanbul cover ./node_modules/.bin/_mocha test/**/*.js"
+    "test": "./node_modules/.bin/istanbul test ./node_modules/.bin/_mocha test/**/*.js",
+    "coverage": "./node_modules/.bin/istanbul cover ./node_modules/.bin/_mocha test/**/*.js"
   },
   "dependencies": {
     "log4js": "^0.6.31",
