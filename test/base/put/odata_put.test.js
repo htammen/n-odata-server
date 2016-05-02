@@ -1,16 +1,6 @@
-/// <reference path="../../../typings/main.d.ts" />
-/**
- * Module dependencies.
- */
 var chai = require('chai');
 var odata_put_1 = require("../../../lib/base/put/odata_put");
-/**
- * Globals
- */
 var expect = chai.expect;
-/**
- * Unit tests
- */
 describe('User Model Unit Tests:', function () {
     describe('2 + 4', function () {
         it('should be 6', function (done) {

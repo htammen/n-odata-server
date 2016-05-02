@@ -1,11 +1,8 @@
-/// <reference path="../../typings/main.d.ts" />
-//import expect = require("chai").expect;
 var chai = require("chai");
 var chai_1 = require("chai");
 var BaseUpdateRequestHandler_1 = require("../../lib/base/BaseUpdateRequestHandler");
 var chaiAsPromised = require("chai-as-promised");
 var lb_constants = require("../../lib/constants/loopback_constants");
-/* see here for a good description of chai-as-promised: http://www.sitepoint.com/promises-in-javascript-unit-tests-the-definitive-guide/ */
 describe("BaseUpdateRequestHandler", function () {
     before(function () {
         chai.use(chaiAsPromised);
@@ -60,25 +57,21 @@ describe("BaseUpdateRequestHandler", function () {
         var reqObjCategory = {};
         var sut = new BaseUpdateRequestHandler_1.BaseUpdateRequestHandler();
         before(function () {
-            // adjust subject under test
             sut._getIdOfNewOwner = function (uri, reldefinition) {
                 return "newId";
             };
-            // create ModelClassCustomer
             ModelClassCustomer.relations = {
                 contacts: {
                     type: lb_constants.LB_REL_BELONGSTO,
                     keyFrom: 12
                 }
             };
-            // create ModelClassProduct
             ModelClassProduct.relations = {
                 details: {
                     type: lb_constants.LB_REL_HASONE,
                     keyFrom: 12
                 }
             };
-            // create reqObjContacts
             reqObjContacts = {
                 contacts: {
                     __metadata: {
@@ -86,7 +79,6 @@ describe("BaseUpdateRequestHandler", function () {
                     }
                 }
             };
-            // create reqObjProducts
             reqObjProducts = {
                 details: {
                     __metadata: {
@@ -94,7 +86,6 @@ describe("BaseUpdateRequestHandler", function () {
                     }
                 }
             };
-            // create reqObjProducts
             reqObjCategory = {
                 products: [
                     {
@@ -127,7 +118,6 @@ describe("BaseUpdateRequestHandler", function () {
             return chai_1.expect(sut._upsertInlineRelations({}, { relations: {} }, {})).to.eventually.equal(204);
         });
         it("checks the belongsTo funcitionality with linked relation definition and should return a fulfilled promise", function () {
-            // create the instance
             var instance = {
                 getId: function () { return "abc"; },
                 updateAttribute: function (keyFrom, id) {
@@ -137,7 +127,6 @@ describe("BaseUpdateRequestHandler", function () {
             return chai_1.expect(sut._upsertInlineRelations(instance, ModelClassCustomer, reqObjContacts)).to.eventually.equal(204);
         });
         it("checks the belongsTo funcitionality with linked relation definition and should return a rejected promise", function () {
-            // create the instance
             var instance = {
                 getId: function () { return "abc"; },
                 updateAttribute: function (keyFrom, id) {
@@ -147,7 +136,6 @@ describe("BaseUpdateRequestHandler", function () {
             return chai_1.expect(sut._upsertInlineRelations(instance, ModelClassCustomer, reqObjContacts)).to.be.rejected;
         });
         it("checks the hasOne functionality with inline relation definition. Should return a fulfilled promise", function () {
-            // create the instance
             var instance = {
                 getId: function () {
                     return "abc";
@@ -165,7 +153,6 @@ describe("BaseUpdateRequestHandler", function () {
             return chai_1.expect(sut._upsertInlineRelations(instance, ModelClassProduct, reqObjProducts)).to.eventually.equal(204);
         });
         it("checks the hasOne functionality with inline relation definition. Should return a rejected promise", function () {
-            // create the instance
             var instance = {
                 getId: function () {
                     return "abc";
@@ -190,7 +177,6 @@ describe("BaseUpdateRequestHandler", function () {
             return chai_1.expect(sut._upsertInlineRelations(instance, ModelClassProduct, reqObjProducts)).to.be.rejected;
         });
         it("checks the hasOne functionality with inline relation definition. Should return a fulfilled promise", function () {
-            // create the instance
             var instance = {
                 getId: function () {
                     return "abc";
@@ -215,7 +201,6 @@ describe("BaseUpdateRequestHandler", function () {
             return chai_1.expect(sut._upsertInlineRelations(instance, ModelClassProduct, reqObjProducts)).to.eventually.equal(204);
         });
         it("checks the hasMany functionality with inline relation definition. Should return a fulfilled promise", function () {
-            // create the instance
             ModelClassCategory.relations.products.modelTo.getIdName = function () { return null; };
             var instance = {
                 getId: function () {
@@ -234,7 +219,6 @@ describe("BaseUpdateRequestHandler", function () {
             return chai_1.expect(sut._upsertInlineRelations(instance, ModelClassCategory, reqObjCategory)).to.eventually.equal(204);
         });
         it("checks the hasMany functionality with inline relation definition. Should return a rejected promise", function () {
-            // create the instance
             ModelClassCategory.relations.products.modelTo.getIdName = function () { return null; };
             var instance = {
                 getId: function () {
@@ -249,7 +233,6 @@ describe("BaseUpdateRequestHandler", function () {
             return chai_1.expect(sut._upsertInlineRelations(instance, ModelClassCategory, reqObjCategory)).to.be.rejected;
         });
         it("checks the hasMany functionality with inline relation definition. Should return a rejected promise", function () {
-            // create the instance
             var instance = {
                 getId: function () {
                     return "abc";
@@ -263,7 +246,6 @@ describe("BaseUpdateRequestHandler", function () {
             return chai_1.expect(sut._upsertInlineRelations(instance, ModelClassCategory, reqObjCategory)).to.be.rejected;
         });
         it("checks the hasMany functionality with inline relation definition. Should return a fulfilled promise", function () {
-            // create the instance
             var instance = {
                 getId: function () {
                     return "abc";
@@ -290,7 +272,6 @@ describe("BaseUpdateRequestHandler", function () {
             return chai_1.expect(sut._upsertInlineRelations(instance, ModelClassCategory, reqObjCategory)).to.eventually.equal(204);
         });
         it("checks the hasMany functionality with inline relation definition. Should return a rejected promise", function () {
-            // create the instance
             var instance = {
                 getId: function () {
                     return "abc";
@@ -316,7 +297,6 @@ describe("BaseUpdateRequestHandler", function () {
             return chai_1.expect(sut._upsertInlineRelations(instance, ModelClassCategory, reqObjCategory)).to.be.rejected;
         });
         it("checks the hasMany functionality with inline relation definition. Should return a rejected promise", function () {
-            // create the instance
             var instance = {
                 getId: function () {
                     return "abc";
@@ -337,7 +317,6 @@ describe("BaseUpdateRequestHandler", function () {
             return chai_1.expect(sut._upsertInlineRelations(instance, ModelClassCategory, reqObjCategory)).to.be.rejected;
         });
         it("checks the hasMany functionality with inline relation definition. Should return a rejected promise", function () {
-            // create the instance
             var instance = {
                 getId: function () {
                     return "abc";

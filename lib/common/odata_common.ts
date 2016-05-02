@@ -95,7 +95,7 @@ function _getRequestType(req) {
  */
 function _isRequestCollection(req) {
 	var retValue = false;
-	var reqParts = /^([^/(]+)(?:[(]([^)]+)[)])?(?:[/]([A-Za-z]+))?/g.exec(req.params[0]);
+	var reqParts = /^([^/(]+)(?:[(][']?(.*[^'])[']?[)])?(?:[/]([A-Za-z]+))?/g.exec(req.params[0]);
 	// reqParts = [full_match, model, id, property]
 	// util.inspect(reqParts);
 
@@ -132,7 +132,7 @@ function _isRequestCollection(req) {
  */
 function _isRequestEntity(req) {
 	var retValue = false;
-	var reqParts = /^([^/(]+)(?:[(]([^)]+)[)])?(?:[/]([A-Za-z]+))?/g.exec(req.params[0]);
+	var reqParts = /^([^/(]+)(?:[(][']?(.*[^'])[']?[)])?(?:[/]([A-Za-z]+))?/g.exec(req.params[0]);
 			// reqParts = [full_match, model, id, property]
 			//util.inspect(reqParts);
 	var models = req.app.models();
@@ -208,7 +208,7 @@ function _getIdFromUrlParameter(param0) {
  * @return {[type]}                Promise that resolves to a ModelClass
  */
 function _getRequestModelClass(models, requestUri) {
-	var reqParts = /^([^/(]+)(?:[(]([^)]+)[)])?(?:[/]([A-Za-z]+))?/g.exec(requestUri);
+	var reqParts = /^([^/(]+)(?:[(][']?(.*[^'])[']?[)])?(?:[/]([A-Za-z]+))?/g.exec(requestUri);
 	if (!reqParts[3]) {
 		return _getModelClass(models, reqParts[1]);
 	} else {
