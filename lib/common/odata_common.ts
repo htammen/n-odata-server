@@ -3,6 +3,7 @@ import constants = require('../constants/odata_constants');
 import enums = require('../constants/odata_enums');
 import lbConstants = require('../constants/loopback_constants');
 import {LoopbackModelClass} from "../types/loopbacktypes";
+import {Metadata} from "../base/metadata/metadata";
 
 var oDataServerConfig;
 
@@ -20,7 +21,8 @@ export = {
 	getIdFromUrlParameter: _getIdFromUrlParameter,
 	getPluralForModel: _getPluralForModel,
 	getModelClass: _getModelClass,
-	getRequestModelClass: _getRequestModelClass
+	getRequestModelClass: _getRequestModelClass,
+	getIdByPropertyType: _getIdByPropertyType
 };
 
 
@@ -95,7 +97,7 @@ function _getRequestType(req) {
  */
 function _isRequestCollection(req) {
 	var retValue = false;
-	var reqParts = /^([^/(]+)(?:[(]([^)]+)[)])?(?:[/]([A-Za-z]+))?/g.exec(req.params[0]);
+	var reqParts = /^([^/(]+)(?:[(](.*)[)])?(?:[/]([A-Za-z]+))?/g.exec(req.params[0]);
 	// reqParts = [full_match, model, id, property]
 	// util.inspect(reqParts);
 
@@ -132,7 +134,7 @@ function _isRequestCollection(req) {
  */
 function _isRequestEntity(req) {
 	var retValue = false;
-	var reqParts = /^([^/(]+)(?:[(]([^)]+)[)])?(?:[/]([A-Za-z]+))?/g.exec(req.params[0]);
+	var reqParts = /^([^/(]+)(?:[(](.*)[)])?(?:[/]([A-Za-z]+))?/g.exec(req.params[0]);
 			// reqParts = [full_match, model, id, property]
 			//util.inspect(reqParts);
 	var models = req.app.models();
@@ -190,6 +192,7 @@ function _getPluralForModel(model: LoopbackModelClass): string {
  * @private
  */
 function _getIdFromUrlParameter(param0) {
+	console.log("'_getIdFromUrlParameter' is DEPRECATED! Please use '_getIdByPropertyType' instead.")
 	var retValue = param0.substring(param0.indexOf('(') + 1, param0.indexOf(')'));
 	if(retValue.startsWith("'") || retValue.startsWith("\"")) {
 		retValue = retValue.substring(1, retValue.length-1);
@@ -200,6 +203,33 @@ function _getIdFromUrlParameter(param0) {
 	return retValue;
 }
 
+/**
+ * Returns the id that was transmitted via the URL, e.g. '1'.
+ * In this case it extracts 1 as id. Cause a numeric id is translated into EDM.DECIMAL OData clients
+ * often format the value according to the OData formatting rules. In that case the client submits
+ * 1.2M. So we have to cut the M to find the record in the database. 
+ * See (e.g. V2): http://www.odata.org/documentation/odata-version-2-0/overview/ (6.)
+ * @param param0
+ * @returns {string}
+ * @private
+ */
+function _getIdByPropertyType(sRawId, property) {
+	var id;
+	switch (Metadata.prototype._convertType(property)) {
+	case "Edm.String":
+		//search for anything enclosed by ''
+		 id = (/^['](.*)[']$/g.exec(sRawId)||[undefined, undefined])[1];
+		break;
+	case "Edm.Decimal":
+		 id = /^[0-9]+.[0-9]+/g.exec(sRawId)[0];
+		break;
+	default:
+		id = sRawId;
+		break;
+	}
+	return id;
+}
+
 
 /**
  * get the Model for request uri (e.g.: steps(1)/children).
@@ -208,36 +238,48 @@ function _getIdFromUrlParameter(param0) {
  * @return {[type]}                Promise that resolves to a ModelClass
  */
 function _getRequestModelClass(models, requestUri) {
-	var reqParts = /^([^/(]+)(?:[(]([^)]+)[)])?(?:[/]([A-Za-z]+))?/g.exec(requestUri);
+	var reqParts = /^([^/(]+)(?:[(](.*)[)])?(?:[/]([A-Za-z]+))?/g.exec(requestUri);
 	if (!reqParts[3]) {
-		return _getModelClass(models, reqParts[1]);
+		return new Promise(function (resolve, reject) {
+			_getModelClass(models, reqParts[1]).then(function (ModelClass) {
+				var sRequestId = _getIdByPropertyType(reqParts[2], ModelClass.definition._ids[0].property);
+				resolve({modelClass: ModelClass, foreignKeyFilter: undefined, requestId: sRequestId});
+			}
+		)});
 	} else {
 		return new Promise(function (resolve, reject) {
 			_getModelClass(models, reqParts[1]).then(function (BaseModelClass) {
-				//console.log(util.inspect(BaseModelClass.defintion.settings.relations));
+				var modelProps = BaseModelClass.definition.properties;
 				var modelRel = BaseModelClass.settings.relations;
 				if (modelRel && modelRel[reqParts[3]]) {
 					var oFilter = {}, sForeignKey = modelRel[reqParts[3]].foreignKey;
 					if (sForeignKey == "") {
 						sForeignKey = reqParts[3] + "Id";
 					}
-
+					var sRequestId = _getIdByPropertyType(reqParts[2], BaseModelClass.definition._ids[0].property);
+					
 					switch (modelRel[reqParts[3]].type) {
 						case lbConstants.LB_REL_HASMANY:
-							oFilter[sForeignKey] = reqParts[2];
-							_getModelClass(models, modelRel[reqParts[3]].model).then(function (ModelClass) {
-								resolve({modelClass: ModelClass, foreignKeyFilter: oFilter});
-							});
+							//TODO: composite id support 
+							oFilter[sForeignKey] = sRequestId;
+							//oFilter[sForeignKey] = reqParts[2];
+							if(!oFilter[sForeignKey]) {
+								reject("Invalid id");
+							} else {
+								_getModelClass(models, modelRel[reqParts[3]].model).then(function (ModelClass) {
+									resolve({modelClass: ModelClass, foreignKeyFilter: oFilter, requestId: sRequestId});
+								});
+							}
 							break;
 						case lbConstants.LB_REL_BELONGSTO:
-							BaseModelClass.findById(reqParts[2]).then(function (instance) {
+							BaseModelClass.findById(sRequestId, function (error, instance) {
 								if (instance) {
 									oFilter["_id"] = instance[sForeignKey];
 									_getModelClass(models, modelRel[reqParts[3]].model).then(function (ModelClass) {
-										resolve({modelClass: ModelClass, foreignKeyFilter: oFilter});
+										resolve({modelClass: ModelClass, foreignKeyFilter: oFilter, requestId: sRequestId});
 									});
 								} else {
-									reject();
+									reject("Entity not found!");
 								}
 							});
 							break;
