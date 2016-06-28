@@ -34,6 +34,8 @@ fs.stat('n_odata_server_log.json', function(err, stat) {
 	log4js.configure(fileName);
 })
 
+var logger = log4js.getLogger("odata");
+
 var oDataServerConfig;
 
 
@@ -85,6 +87,8 @@ function _handleODataVersion2(loopbackApplication, options, oDataServerConfig) {
 
 	loopbackApplication.use(options.path, function (req:express.Request, res:express.Response, next) {
 		try {
+			logger.info("processing OData V2 request of type " + req.method);
+			logger.debug("baseUrl = " + req.baseUrl);
 			switch (req.method) {
 				case 'GET':
 					_handleGet.call(this, req, res);

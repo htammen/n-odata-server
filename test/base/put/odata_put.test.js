@@ -1,3 +1,4 @@
+/// <reference path="../../../typings/main.d.ts" />
 var chai = require('chai');
 var odata_put_1 = require("../../../lib/base/put/odata_put");
 var expect = chai.expect;
