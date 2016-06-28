@@ -342,16 +342,16 @@ export class ODataGetBase extends BaseRequestHandler.BaseRequestHandler {
 		return new Promise((resolve, reject) => {
 			var param0:string = req.params[0];
 			var arrParamToken:Array<string> = param0.split("/");
-			// extract the id from the request
-			var id = commons.getIdFromUrlParameter(arrParamToken[0]);
-			var collection = arrParamToken[0].substr(0, param0.indexOf('('));
 			commons.getRequestModelClass(req.app.models, req.params[0]).then(((oResult:any) => {
 				var ModelClass = oResult;
 				if(ModelClass.modelClass) {
 					ModelClass = ModelClass.modelClass;
 				}
+				var id;
 				if(oResult.foreignKeyFilter) {
 					id = oResult.foreignKeyFilter[Object.keys(oResult.foreignKeyFilter)[0]];
+				} else {
+					id = oResult.requestId;
 				}
 					if (ModelClass) {
 						// apply $select URL parameter
@@ -411,7 +411,9 @@ export class ODataGetBase extends BaseRequestHandler.BaseRequestHandler {
 					} else {
 						reject(404);
 					}
-				}).bind(this))
+				}).bind(this), (error) => {
+					reject(Error(error));
+				});
 		});
 	}
 

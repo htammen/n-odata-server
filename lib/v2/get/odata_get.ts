@@ -44,7 +44,7 @@ export class ODataGet extends ODataGetBase.ODataGetBase{
 					res.send(result);
 				}, (error) => {
 					console.error('An error occured: ', error);
-					res.sendStatus(500);
+					res.sendStatus(500).send(error.toString());
 				})
 				break;
 
@@ -81,7 +81,7 @@ export class ODataGet extends ODataGetBase.ODataGetBase{
 					res.send(result);
 				}, (error) => {
 					console.error('An error occured: ', error);
-					res.sendStatus(500);
+					res.sendStatus(500).send(error.toString());
 				});
 				break;
 
