@@ -225,7 +225,7 @@ function _getIdByPropertyType(sRawId, property) {
 		break;
 	default:
 		//for MongoDB generated id collumns
-		if(property.generated === true){
+		if(property.generated === true && typeof sRawId !== "undefined"){
 			//if URL starts with ', needs to work too
 			if(sRawId.charAt(0) === "'"){
 				//search for anything enclosed by ''
