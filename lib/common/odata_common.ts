@@ -224,7 +224,17 @@ function _getIdByPropertyType(sRawId, property) {
 		 id = /^[0-9]+.[0-9]+/g.exec(sRawId)[0];
 		break;
 	default:
-		id = sRawId;
+		//for MongoDB generated id collumns
+		if(property.generated === true){
+			//if URL starts with ', needs to work too
+			if(sRawId.charAt(0) === "'"){
+				//search for anything enclosed by ''
+				id = (/^['](.*)[']$/g.exec(sRawId)||[undefined, undefined])[1];
+			}
+		}else{
+			//other cases, validating type Edm type
+			id = sRawId;
+		}
 		break;
 	}
 	return id;
