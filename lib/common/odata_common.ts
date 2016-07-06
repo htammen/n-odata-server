@@ -207,7 +207,7 @@ function _getIdFromUrlParameter(param0) {
  * Returns the id that was transmitted via the URL, e.g. '1'.
  * In this case it extracts 1 as id. Cause a numeric id is translated into EDM.DECIMAL OData clients
  * often format the value according to the OData formatting rules. In that case the client submits
- * 1.2M. So we have to cut the M to find the record in the database. 
+ * 1.2M. So we have to cut the M to find the record in the database.
  * See (e.g. V2): http://www.odata.org/documentation/odata-version-2-0/overview/ (6.)
  * @param param0
  * @returns {string}
@@ -224,7 +224,19 @@ function _getIdByPropertyType(sRawId, property) {
 		 id = /^[0-9]+.[0-9]+/g.exec(sRawId)[0];
 		break;
 	default:
-		id = sRawId;
+		//for MongoDB generated id collumns
+		if(property.generated === true && typeof sRawId !== "undefined"){
+			//if URL starts with ', needs to work too
+			if(sRawId.charAt(0) === "'"){
+				//search for anything enclosed by ''
+				id = (/^['](.*)[']$/g.exec(sRawId)||[undefined, undefined])[1];
+			} else {
+				id = sRawId;
+			}
+		}else{
+			//other cases, validating type Edm type
+			id = sRawId;
+		}
 		break;
 	}
 	return id;
@@ -257,10 +269,10 @@ function _getRequestModelClass(models, requestUri) {
 						sForeignKey = reqParts[3] + "Id";
 					}
 					var sRequestId = _getIdByPropertyType(reqParts[2], BaseModelClass.definition._ids[0].property);
-					
+
 					switch (modelRel[reqParts[3]].type) {
 						case lbConstants.LB_REL_HASMANY:
-							//TODO: composite id support 
+							//TODO: composite id support
 							oFilter[sForeignKey] = sRequestId;
 							//oFilter[sForeignKey] = reqParts[2];
 							if(!oFilter[sForeignKey]) {
