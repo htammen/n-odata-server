@@ -192,5 +192,8 @@ Following you see the default configuration that is used if the above mentioned 
 To read more about the n-odata-server you should have a look at the [wiki](https://github.com/htammen/n-odata-server/wiki) or you can have a
 look at this [presentation](http://prezi.com/dznggtj0zjlo/?utm_campaign=share&utm_medium=copy) for a not very technical overview
 
+## Tutorials
+Have a look at our [wiki page](https://github.com/htammen/n-odata-server/wiki) for tutorials that demonstrate the usage of n-odata-server.
+
 ## License
 This project is licensed under the MIT license. See the [LICENSE](LICENSE) file for more info.
