@@ -231,10 +231,22 @@ export class ODataGetBase extends BaseRequestHandler.BaseRequestHandler {
 							ModelClass.find(filter).then(((data) => {
 								// add metadata
 								data.forEach(((object, idx, arr) => {
-									object.__data.__metadata = {
-										uri: commons.getBaseURL(req) + '/' + commons.getPluralForModel(ModelClass) + '(\'' + object.getId() + '\')',
-										type: constants.ODATA_NAMESPACE + '.' + ModelClass.definition.name
-									};
+									var propertyType = commons.convertType(ModelClass.definition._ids[0].property);
+									switch (propertyType) {
+										case "Edm.Decimal":
+										case "Edm.Int32":
+											object.__data.__metadata = {
+												uri: commons.getBaseURL(req) + '/' + commons.getPluralForModel(ModelClass) + '(' + object.getId() + ')',
+												type: constants.ODATA_NAMESPACE + '.' + ModelClass.definition.name
+											};
+											break;
+										default:
+											object.__data.__metadata = {
+												uri: commons.getBaseURL(req) + '/' + commons.getPluralForModel(ModelClass) + '(\'' + object.getId() + '\')',
+												type: constants.ODATA_NAMESPACE + '.' + ModelClass.definition.name
+											};
+											break;
+									}
 									// add deferred relations
 									for(var rel in ModelClass.relations) {
 										this._createDeferredObject(object, rel, req, ModelClass, object.getId());
@@ -250,6 +262,7 @@ export class ODataGetBase extends BaseRequestHandler.BaseRequestHandler {
 								// if $inlinecount was requested we have to count all records in the database
 								if (req.query.$inlinecount) {
 									ModelClass.count().then(function (resultCount) {
+										//noinspection TypeScriptUnresolvedVariable
 										result.count = resultCount;
 										resolve(result);
 									})
@@ -296,8 +309,8 @@ export class ODataGetBase extends BaseRequestHandler.BaseRequestHandler {
 	 * @param req
 	 * @param res
 	 * @returns {Promise}
-     * @private
-     */
+	 * @private
+	 */
 	_getCollectionCount(req, res) {
 		return new Promise((resolve, reject) => {
 			var arrParams0 = req.params[0].split('/');
@@ -353,67 +366,67 @@ export class ODataGetBase extends BaseRequestHandler.BaseRequestHandler {
 				} else {
 					id = oResult.requestId;
 				}
-					if (ModelClass) {
-						// apply $select URL parameter
-						var filter = _applySelect(req);
-						// apply $expand URL parameter
-						filter = _applyExpand.call(this, req, filter);
+				if (ModelClass) {
+					// apply $select URL parameter
+					var filter = _applySelect(req);
+					// apply $expand URL parameter
+					filter = _applyExpand.call(this, req, filter);
 
-						ModelClass.findById(id, filter).then( ((instance) => {
-							if (instance) {
-								// Handling $links
-								if(arrParamToken[1] === "$links") {
-									var result:EntityResult = new EntityResult();
-									// retrieve the relations from the ModelClass instance
-									instance[arrParamToken[2]]( (err, res) => {
-										if(err){
-											console.error(err);
-											reject(500);
-										} else {
-											console.log(res);
-											var relDefinition:LoopbackRelationDefinition = ModelClass.relations[arrParamToken[2]];
-											var modelTo:LoopbackModelClass = relDefinition.modelTo;
-											result.value = [];
-											res.forEach((obj, idx, arr) => {
-												var url = commons.getBaseURL(req) + '/' + modelTo.pluralModelName + '(' + obj.getId() + ')'
-												result.value.push({url: url});
-											});
-											resolve(result);
-										}
-									});
-
-								} else {
-									// add metadata
-									instance.__data.__metadata = {
-										uri: commons.getBaseURL(req) + '/' + commons.getPluralForModel(ModelClass) + '(' + id + ')',
-										type: constants.ODATA_NAMESPACE + '.' + ModelClass.definition.name
-									};
-									// add deferred relations
-									for(var rel in ModelClass.relations) {
-										this._createDeferredObject(instance, rel, req, ModelClass, id);
+					ModelClass.findById(id, filter).then( ((instance) => {
+						if (instance) {
+							// Handling $links
+							if(arrParamToken[1] === "$links") {
+								var result:EntityResult = new EntityResult();
+								// retrieve the relations from the ModelClass instance
+								instance[arrParamToken[2]]( (err, res) => {
+									if(err){
+										console.error(err);
+										reject(500);
+									} else {
+										console.log(res);
+										var relDefinition:LoopbackRelationDefinition = ModelClass.relations[arrParamToken[2]];
+										var modelTo:LoopbackModelClass = relDefinition.modelTo;
+										result.value = [];
+										res.forEach((obj, idx, arr) => {
+											var url = commons.getBaseURL(req) + '/' + modelTo.pluralModelName + '(' + obj.getId() + ')'
+											result.value.push({url: url});
+										});
+										resolve(result);
 									}
-									// Handling regular Entity requests
-									var result:EntityResult = new EntityResult();
-									result.data = instance.toJSON();
-									/* TODO: metadata is currently ignored by loopback. all properties beginning with "__".
-									 * reparsing stringified instance (after .toJSON()), add them and stringify again.
-									 */
-									resolve(result);
-								}
-							} else {
-								console.error('entity data for request ' + req.originalUrl + ' was not found');
-								reject(404);
-							}
-						}).bind(this)).catch(err => {
-							reject(err);
-						});
+								});
 
-					} else {
-						reject(404);
-					}
-				}).bind(this), (error) => {
-					reject(Error(error));
-				});
+							} else {
+								// add metadata
+								instance.__data.__metadata = {
+									uri: commons.getBaseURL(req) + '/' + commons.getPluralForModel(ModelClass) + '(' + id + ')',
+									type: constants.ODATA_NAMESPACE + '.' + ModelClass.definition.name
+								};
+								// add deferred relations
+								for(var rel in ModelClass.relations) {
+									this._createDeferredObject(instance, rel, req, ModelClass, id);
+								}
+								// Handling regular Entity requests
+								var result:EntityResult = new EntityResult();
+								result.data = instance.toJSON();
+								/* TODO: metadata is currently ignored by loopback. all properties beginning with "__".
+								 * reparsing stringified instance (after .toJSON()), add them and stringify again.
+								 */
+								resolve(result);
+							}
+						} else {
+							console.error('entity data for request ' + req.originalUrl + ' was not found');
+							reject(404);
+						}
+					}).bind(this)).catch(err => {
+						reject(err);
+					});
+
+				} else {
+					reject(404);
+				}
+			}).bind(this), (error) => {
+				reject(Error(error));
+			});
 		});
 	}
 
@@ -425,19 +438,32 @@ export class ODataGetBase extends BaseRequestHandler.BaseRequestHandler {
 	 * @param req
 	 * @param ModelClass
 	 * @param id
-     * @private
-     */
+	 * @private
+	 */
 	_createDeferredObject(instance:{__data: any}, rel:string, req:any, ModelClass:any, id:any) {
 		if (!instance.__data[rel]) {
-			instance.__data[rel] = {
-				__deferred: {
-					uri: commons.getBaseURL(req) + '/' + commons.getPluralForModel(ModelClass) + '(\'' + id + '\')/' + rel
-				}
+			var propertyType = commons.convertType(ModelClass.definition._ids[0].property);
+			switch (propertyType) {
+				case "Edm.Decimal":
+				case "Edm.Int32":
+					instance.__data[rel] = {
+						__deferred: {
+							uri: commons.getBaseURL(req) + '/' + commons.getPluralForModel(ModelClass) + '(' + id + ')/' + rel
+						}
+					};
+					break;
+				default:
+					instance.__data[rel] = {
+						__deferred: {
+							uri: commons.getBaseURL(req) + '/' + commons.getPluralForModel(ModelClass) + '(\'' + id + '\')/' + rel
+						}
+					};
+					break;
 			}
 		}
 	}
 
-/**
+	/**
 	 * Returns the service document of this service
 	 * The service document displays all entitysets, functions, Singletons, ... that the service
 	 * exposes
@@ -571,11 +597,11 @@ function _applyOrderBy(req, filter?:LoopbackFilter) {
 			//	incl[objArr[0]] = objArr[1]
 			//	filter.order.push(incl);
 			//} else {
-				for(var prop in obj) {
-					var str:string = prop;
-					str += " " + obj[prop].toUpperCase();
-					filter.order.push(str);
-				}
+			for(var prop in obj) {
+				var str:string = prop;
+				str += " " + obj[prop].toUpperCase();
+				filter.order.push(str);
+			}
 			//}
 		})
 	}
