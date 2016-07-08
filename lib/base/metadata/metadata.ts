@@ -45,7 +45,7 @@ export class Metadata {
 
 					// exclude deprecated properties
 					if (property.deprecated !== true) {
-						var edmType:String = this._convertType(property);
+						var edmType:String = commons.convertType(property);
 						edmType = edmType || property.type.name;
 						arrProps.push({"@Name": propName, "@Type": edmType});
 					}
@@ -162,41 +162,6 @@ export class Metadata {
 		})
 
 	};
-
-	/**
-	 * converts a loopback datatype into a OData datatype
-	 * @param property, loopback property
-	 * @private
-	 */
-	private _convertType(property:any):String {
-		var retValue:String;
-		var dbType = property.type.name;
-		switch (dbType) {
-			case "String":
-				retValue = "Edm.String";
-				break;
-
-			case "Date":
-				retValue = "Edm.DateTime"
-				break;
-
-			case "Number":
-				if (property.id) {
-					retValue = "Edm.Int32"
-				} else {
-					retValue = "Edm.Decimal"
-				}
-				break;
-
-			case "Boolean":
-				retValue = "Edm.Boolean"
-				break;
-
-			default:
-				break;
-		}
-		return retValue;
-	}
 
 }
 

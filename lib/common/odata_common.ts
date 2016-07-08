@@ -3,7 +3,6 @@ import constants = require('../constants/odata_constants');
 import enums = require('../constants/odata_enums');
 import lbConstants = require('../constants/loopback_constants');
 import {LoopbackModelClass} from "../types/loopbacktypes";
-import {Metadata} from "../base/metadata/metadata";
 
 var oDataServerConfig;
 
@@ -22,7 +21,8 @@ export = {
 	getPluralForModel: _getPluralForModel,
 	getModelClass: _getModelClass,
 	getRequestModelClass: _getRequestModelClass,
-	getIdByPropertyType: _getIdByPropertyType
+	getIdByPropertyType: _getIdByPropertyType,
+	convertType: _convertType
 };
 
 
@@ -215,7 +215,7 @@ function _getIdFromUrlParameter(param0) {
  */
 function _getIdByPropertyType(sRawId, property) {
 	var id;
-	switch (Metadata.prototype._convertType(property)) {
+	switch (_convertType(property)) {
 	case "Edm.String":
 		//search for anything enclosed by ''
 		 id = (/^['](.*)[']$/g.exec(sRawId)||[undefined, undefined])[1];
@@ -347,6 +347,43 @@ function _getModelClass(models: Function, className: string) {
 		resolve( ModelClass );
 	})
 }
+
+/**
+ * converts a loopback datatype into a OData datatype
+ * @param property, loopback property
+ * @private
+ */
+function _convertType(property:any):String {
+	var retValue:String;
+	var dbType = property.type.name;
+	switch (dbType) {
+		case "String":
+			retValue = "Edm.String";
+			break;
+
+		case "Date":
+			retValue = "Edm.DateTime"
+			break;
+
+		case "Number":
+			if (property.id) {
+				retValue = "Edm.Int32"
+			} else {
+				retValue = "Edm.Decimal"
+			}
+			break;
+
+		case "Boolean":
+			retValue = "Edm.Boolean"
+			break;
+
+		default:
+			break;
+	}
+	return retValue;
+}
+
+
 
 
 
