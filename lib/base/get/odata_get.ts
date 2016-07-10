@@ -12,6 +12,7 @@ import {LoopbackFilter} from "../../types/loopbacktypes";
 import {EntityResult} from "../BaseRequestHandler";
 import {LoopbackRelationDefinition} from "../../types/loopbacktypes";
 import {LoopbackModelClass} from "../../types/loopbacktypes";
+import {RequestModelClass} from "../../types/n_odata_types";
 
 /** Interface for metadata of OData */
 interface Metadata {
@@ -130,11 +131,8 @@ export class ODataGetBase extends BaseRequestHandler.BaseRequestHandler {
 	_getCollectionData(req, res) {
 		return new Promise((resolve, reject) => {
 			//DONE: The odata.nextLink annotation MUST be included in a response that represents a partial result. "@odata.nextLink": "...?$skiptoken=342r89"
-			commons.getRequestModelClass(req.app.models, req.params[0]).then((function (oResult) {
-				var ModelClass = oResult;
-				if(ModelClass.modelClass) {
-					ModelClass = ModelClass.modelClass;
-				}
+			commons.getRequestModelClass(req.app.models, req.params[0]).then((function (oResult:RequestModelClass) {
+				var ModelClass = oResult.modelClass;
 				try {
 					if (ModelClass) {
 						// Retrieve odata.maxpagesize from Prefer header of the request
@@ -316,11 +314,8 @@ export class ODataGetBase extends BaseRequestHandler.BaseRequestHandler {
 			var arrParams0 = req.params[0].split('/');
 			if (arrParams0 && arrParams0[arrParams0.length - 1] === '$count') {
 				// the collection has to be in the first part of params
-				commons.getRequestModelClass(req.app.models, req.params[0]).then((oResult:any) => {
-					var ModelClass = oResult;
-					if(ModelClass.modelClass) {
-						ModelClass = ModelClass.modelClass;
-					}
+				commons.getRequestModelClass(req.app.models, req.params[0]).then((oResult:RequestModelClass) => {
+					let ModelClass = oResult.modelClass;
 					if (ModelClass) {
 						if (req.accepts("text/plain")) {
 							ModelClass.count(oResult.foreignKeyFilter, function(err, count) {
@@ -353,14 +348,11 @@ export class ODataGetBase extends BaseRequestHandler.BaseRequestHandler {
 	 */
 	_getEntityData(req, res) {
 		return new Promise((resolve, reject) => {
-			var param0:string = req.params[0];
-			var arrParamToken:Array<string> = param0.split("/");
-			commons.getRequestModelClass(req.app.models, req.params[0]).then(((oResult:any) => {
-				var ModelClass = oResult;
-				if(ModelClass.modelClass) {
-					ModelClass = ModelClass.modelClass;
-				}
-				var id;
+			let param0:string = req.params[0];
+			let arrParamToken:Array<string> = param0.split("/");
+			commons.getRequestModelClass(req.app.models, req.params[0]).then(((oResult:RequestModelClass) => {
+				let ModelClass = oResult.modelClass;
+				let id;
 				if(oResult.foreignKeyFilter) {
 					id = oResult.foreignKeyFilter[Object.keys(oResult.foreignKeyFilter)[0]];
 				} else {
@@ -368,12 +360,22 @@ export class ODataGetBase extends BaseRequestHandler.BaseRequestHandler {
 				}
 				if (ModelClass) {
 					// apply $select URL parameter
-					var filter = _applySelect(req);
+					let filter = _applySelect(req);
 					// apply $expand URL parameter
 					filter = _applyExpand.call(this, req, filter);
 
-					ModelClass.findById(id, filter).then( ((instance) => {
-						if (instance) {
+
+					_findInstanceByIdOrForeignkey.call(this, ModelClass, id, filter, oResult).then( ((instance) => {
+					//ModelClass.findById(id, filter).then( ((instance) => {
+						if (instance && instance[0]) {
+							// if instance is an array it was searched via the foreignKey. Cause we expect a single instance
+							// we can work with we reject the promise in case we get more than one instance objects
+							if(instance.length > 1 ) {
+								reject("It was expected to find a single instance but the resultset contains " + instance.length + " objects");
+							} else {
+								instance = instance[0];
+							}
+
 							// Handling $links
 							if(arrParamToken[1] === "$links") {
 								var result:EntityResult = new EntityResult();
@@ -492,6 +494,30 @@ export class ODataGetBase extends BaseRequestHandler.BaseRequestHandler {
 
 }
 
+
+/**
+ * Find a single model instance either by id or by foreignKey. If a foreignKey is defined in oReqQueryObject then
+ * this function will try to find the object via a foreignKey search. Otherwise it will search by using findById.
+ * @param ModelClass
+ * @param id
+ * @param filter
+ * @param oReqQueryObject
+ * @returns {Promise}
+ * @private
+ */
+function _findInstanceByIdOrForeignkey(ModelClass: LoopbackModelClass, id:any, filter: LoopbackFilter, oReqQueryObject: RequestModelClass) {
+	return new Promise((resolve, reject) => {
+		if(oReqQueryObject.foreignKeyFilter) {
+			ModelClass.find({where: oReqQueryObject.foreignKeyFilter}).then( ((instances) => {
+				resolve(instances);
+			}));
+		} else {
+			ModelClass.findById(id, filter).then( ((instance) => {
+				resolve([instance]);
+			}));
+		}
+	});
+}
 
 /**
  * Applies the $select URL parameter that may be defined on the URL to the filter object of loopback find.
