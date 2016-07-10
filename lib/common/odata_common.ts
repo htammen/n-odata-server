@@ -3,6 +3,8 @@ import constants = require('../constants/odata_constants');
 import enums = require('../constants/odata_enums');
 import lbConstants = require('../constants/loopback_constants');
 import {LoopbackModelClass} from "../types/loopbacktypes";
+import {RequestModelClass} from "../types/n_odata_types";
+import log4js = require('log4js');
 
 var oDataServerConfig;
 
@@ -25,6 +27,7 @@ export = {
 	convertType: _convertType
 };
 
+var logger = log4js.getLogger("odata");
 
 function _setConfig(config) {
 	oDataServerConfig = config;
@@ -255,7 +258,7 @@ function _getRequestModelClass(models, requestUri) {
 		return new Promise(function (resolve, reject) {
 			_getModelClass(models, reqParts[1]).then(function (ModelClass) {
 				var sRequestId = _getIdByPropertyType(reqParts[2], ModelClass.definition._ids[0].property);
-				resolve({modelClass: ModelClass, foreignKeyFilter: undefined, requestId: sRequestId});
+				resolve({modelClass: ModelClass, foreignKeyFilter: undefined, requestId: sRequestId} as RequestModelClass);
 			}
 		)});
 	} else {
@@ -268,7 +271,8 @@ function _getRequestModelClass(models, requestUri) {
 					if (sForeignKey == "") {
 						sForeignKey = reqParts[3] + "Id";
 					}
-					var sRequestId = _getIdByPropertyType(reqParts[2], BaseModelClass.definition._ids[0].property);
+					let idName = BaseModelClass.getIdName();
+					var sRequestId = _getIdByPropertyType(reqParts[2], BaseModelClass.definition.properties[idName]);
 
 					switch (modelRel[reqParts[3]].type) {
 						case lbConstants.LB_REL_HASMANY:
@@ -279,28 +283,46 @@ function _getRequestModelClass(models, requestUri) {
 								reject("Invalid id");
 							} else {
 								_getModelClass(models, modelRel[reqParts[3]].model).then(function (ModelClass) {
-									resolve({modelClass: ModelClass, foreignKeyFilter: oFilter, requestId: sRequestId});
+									resolve({modelClass: ModelClass, foreignKeyFilter: oFilter, requestId: sRequestId} as RequestModelClass);
 								});
 							}
 							break;
 						case lbConstants.LB_REL_BELONGSTO:
 							BaseModelClass.findById(sRequestId, function (error, instance) {
 								if (instance) {
-									oFilter["_id"] = instance[sForeignKey];
 									_getModelClass(models, modelRel[reqParts[3]].model).then(function (ModelClass) {
-										resolve({modelClass: ModelClass, foreignKeyFilter: oFilter, requestId: sRequestId});
+										let idName = ModelClass.getIdName();
+										oFilter[idName] = instance[sForeignKey];
+										resolve({modelClass: ModelClass, foreignKeyFilter: oFilter, requestId: sRequestId} as RequestModelClass);
 									});
 								} else {
 									reject("Entity not found!");
 								}
 							});
 							break;
+						case lbConstants.LB_REL_HASONE:
+							//TODO: composite id support
+							oFilter[sForeignKey] = sRequestId;
+							//oFilter[sForeignKey] = reqParts[2];
+							if(!oFilter[sForeignKey]) {
+								reject("Invalid id");
+							} else {
+								_getModelClass(models, modelRel[reqParts[3]].model).then(function (ModelClass) {
+									resolve({modelClass: ModelClass, foreignKeyFilter: oFilter, requestId: sRequestId} as RequestModelClass);
+								});
+							}
+							break;
+						default:
+							var str = modelRel[reqParts[3]].type + " relations not supported yet";
+							logger.warn(str);
+							reject(str);
+							break;
 						//TODO: lbConstants.LB_REL_HASONE
 					}
 
 
 				} else {
-					resolve(BaseModelClass);
+					resolve({modelClass: BaseModelClass} as RequestModelClass);
 				}
 			});
 		});

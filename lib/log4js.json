@@ -2,7 +2,8 @@
 	"appenders": [
 		{ "type": "console",
 			"layout": {
-				"type": "basic"
+				"type": "pattern",
+				"pattern" : "[%d{ISO8601}] [%p] %c - %m"
 			}
 		},
 		{
