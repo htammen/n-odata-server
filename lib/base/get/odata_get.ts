@@ -197,7 +197,7 @@ export class ODataGetBase extends BaseRequestHandler.BaseRequestHandler {
 									// if nextLink is set, means we deliver partially response, we need to know if there would be more data
 									// if the nextLink is processed. If the current data chunk is the last one we MUST NOT set the nextLink into
 									// the response
-									if (nextLink) {
+									if (nextLink) { 
 										var nlFilter:any = {};
 										nlFilter.skip = _skiptoken;
 										nlFilter.limit = 1;	// just need to test if there is at least one more record
@@ -400,11 +400,6 @@ export class ODataGetBase extends BaseRequestHandler.BaseRequestHandler {
 								});
 
 							} else {
-								// add metadata
-								instance.__data.__metadata = {
-									uri: commons.getBaseURL(req) + '/' + commons.getPluralForModel(ModelClass) + '(' + id + ')',
-									type: constants.ODATA_NAMESPACE + '.' + ModelClass.definition.name
-								};
 								// add deferred relations
 								for(var rel in ModelClass.relations) {
 									this._createDeferredObject(instance, rel, req, ModelClass, id);
@@ -412,9 +407,24 @@ export class ODataGetBase extends BaseRequestHandler.BaseRequestHandler {
 								// Handling regular Entity requests
 								var result:EntityResult = new EntityResult();
 								result.data = instance.toJSON();
-								/* TODO: metadata is currently ignored by loopback. all properties beginning with "__".
-								 * reparsing stringified instance (after .toJSON()), add them and stringify again.
-								 */
+
+								//add metadata
+								let propertyType:String = commons.convertType(ModelClass.definition._ids[0].property)
+								let sKey:string;
+								switch (propertyType) {
+									case "Edm.Decimal":
+									case "Edm.Int32":
+										sKey =  commons.getBaseURL(req) + '/' + commons.getPluralForModel(ModelClass) + '(' + id + ')';
+										break;
+									default:
+										sKey=  commons.getBaseURL(req) + '/' + commons.getPluralForModel(ModelClass) + '(\'' + id + '\')';
+										break;
+								}
+
+								result.data.__metadata = {
+									uri: sKey,
+									type: constants.ODATA_NAMESPACE + '.' + ModelClass.definition.name
+								};
 								resolve(result);
 							}
 						} else {
