@@ -1,12 +1,16 @@
 {
-  "ambientDependencies": {
-    "chai": "github:DefinitelyTyped/DefinitelyTyped/chai/chai.d.ts#faa49cc68025118355b677b936892435b9be7247",
-    "chai-as-promised": "github:DefinitelyTyped/DefinitelyTyped/chai-as-promised/chai-as-promised.d.ts#d6e3f732183ca0ee4c4b438323253b384f5b4091",
-    "es6-promise": "github:DefinitelyTyped/DefinitelyTyped/es6-promise/es6-promise.d.ts#5bff5f871a0ea58be885fb52146cb67b86bcc1ae",
-    "express": "github:DefinitelyTyped/DefinitelyTyped/express/express.d.ts#dd4626a4e23ce8d6d175e0fe8244a99771c8c3f2",
-    "log4js": "github:DefinitelyTyped/DefinitelyTyped/log4js/log4js.d.ts#7554cff7c4dd34decc2f3dc0d711a6c288174eee",
-    "mocha": "github:DefinitelyTyped/DefinitelyTyped/mocha/mocha.d.ts#faa49cc68025118355b677b936892435b9be7247",
-    "serve-static": "github:DefinitelyTyped/DefinitelyTyped/serve-static/serve-static.d.ts#0fa4e9e61385646ea6a4cba2aef357353d2ce77f"
+  "dependencies": {
+    "mime": "registry:npm/mime#1.3.0+20160423043021"
   },
-  "dependencies": {}
+  "globalDependencies": {
+    "chai": "registry:dt/chai#3.4.0+20160601211834",
+    "chai-as-promised": "registry:dt/chai-as-promised#0.0.0+20160423070304",
+    "es6-promise": "registry:dt/es6-promise#0.0.0+20160614011821",
+    "express": "registry:dt/express#4.0.0+20160708185218",
+    "express-serve-static-core": "registry:dt/express-serve-static-core#4.0.0+20160715232503",
+    "log4js": "registry:dt/log4js#0.0.0+20160608042355",
+    "mocha": "registry:dt/mocha#2.2.5+20160720003353",
+    "promises-a-plus": "registry:dt/promises-a-plus#0.0.0+20160317120654",
+    "serve-static": "registry:dt/serve-static#0.0.0+20160606155157"
+  }
 }

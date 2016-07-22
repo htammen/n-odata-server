@@ -1,4 +1,4 @@
-/// <reference path="../../../typings/main.d.ts" />
+/// <reference path="../../../typings/index.d.ts" />
 /**
  * Created by helmut on 01.12.15.
  */
@@ -13,6 +13,8 @@ import {EntityResult} from "../BaseRequestHandler";
 import {LoopbackRelationDefinition} from "../../types/loopbacktypes";
 import {LoopbackModelClass} from "../../types/loopbacktypes";
 import {RequestModelClass} from "../../types/n_odata_types";
+import {Request} from "express-serve-static-core";
+import {Response} from "express-serve-static-core";
 
 /** Interface for metadata of OData */
 interface Metadata {
@@ -702,7 +704,6 @@ function _convertAstToLoopbackFilter(ast:any, where:any):any {
 
 		default:
 			throw new Error('something went wrong. \'' + ast.type + '\' is not a supported query type.');
-			break;
 	}
 
 	return where;
@@ -817,12 +818,10 @@ function _convertAstToRegexp(ast:any):any {
 			//TODO: function indexof has to be implemented
 			case 'indexof':
 				throw new Error('function ' + ast.left.func + ' not implemented yet');
-				break;
 
 			//TODO: function replace has to be implemented
 			case 'replace':
 				throw new Error('function ' + ast.left.func + ' not implemented yet');
-				break;
 
 			//TODO: function substring has to be implemented
 			case 'substring':
@@ -840,76 +839,61 @@ function _convertAstToRegexp(ast:any):any {
 			//TODO: function tolower has to be implemented
 			case 'tolower':
 				throw new Error('function ' + ast.left.func + ' not implemented yet');
-				break;
 
 			//TODO: function toupper has to be implemented
 			case 'toupper':
 				throw new Error('function ' + ast.left.func + ' not implemented yet');
-				break;
 
 			//TODO: function trim has to be implemented
 			case 'trim':
 				throw new Error('function ' + ast.left.func + ' not implemented yet');
-				break;
 
 			//TODO: function concat has to be implemented
 			case 'concat':
 				throw new Error('function ' + ast.left.func + ' not implemented yet');
-				break;
 
 			//TODO: function day has to be implemented
 			case 'day':
 				throw new Error('function ' + ast.left.func + ' not implemented yet');
-				break;
 
 			//TODO: function hour has to be implemented
 			case 'hour':
 				throw new Error('function ' + ast.left.func + ' not implemented yet');
-				break;
 
 			//TODO: function minute has to be implemented
 			case 'minute':
 				throw new Error('function ' + ast.left.func + ' not implemented yet');
-				break;
 
 			//TODO: function month has to be implemented
 			case 'month':
 				throw new Error('function ' + ast.left.func + ' not implemented yet');
-				break;
 
 			//TODO: function second has to be implemented
 			case 'second':
 				throw new Error('function ' + ast.left.func + ' not implemented yet');
-				break;
 
 			//TODO: function year has to be implemented
 			case 'year':
 				throw new Error('function ' + ast.left.func + ' not implemented yet');
-				break;
 
 			//TODO: function round has to be implemented
 			case 'round':
 				throw new Error('function ' + ast.left.func + ' not implemented yet');
-				break;
 
 			//TODO: function floor has to be implemented
 			case 'floor':
 				throw new Error('function ' + ast.left.func + ' not implemented yet');
-				break;
 
 			//TODO: function ceiling has to be implemented
 			case 'ceiling':
 				throw new Error('function ' + ast.left.func + ' not implemented yet');
-				break;
 
 			//TODO: function IsOf has to be implemented
 			case 'IsOf':
 				throw new Error('function ' + ast.left.func + ' not implemented yet');
-				break;
 
 			default:
 				throw new Error('function ' + ast.left.func + ' not found');
-				break;
 		}
 	}
 

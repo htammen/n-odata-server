@@ -14,7 +14,7 @@ Please stay tuned or contribute to the project if you want quicker results.__
 
 If you want to contribute send us an email to [`h.tammen@tammen-it-solutions.de`](mailto:h.tammen@tammen-it-solutions.de).
 We are collaborating via a [Slack Team](https://slack.com/) and will invite you to this as soon as we receive a request for contribution.
-We manage our tasks via [Trello](https://trello.com). We will also authorize you to our Trello board if you want to contribute to the project.
+We manage our tasks via [zube.io](https://zube.io). We will also authorize you to our zube scrum board if you want to contribute to the project.
 
 We have currently implemented some very basic OData functionality (see below) that allows you to use some basic CRUD operations on your data. We try to implement some more useful functionality soon.
 

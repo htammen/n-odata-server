@@ -1,4 +1,4 @@
-/// <reference path="../../../typings/main.d.ts" />
+/// <reference path="../../../typings/index.d.ts" />
 
 import constants = require('../../constants/odata_constants');
 import enums = require('../../constants/odata_enums');
@@ -8,7 +8,7 @@ import BaseRequestHandler = require('../../base/BaseRequestHandler');
 import ODataGetBase = require('../../base/get/odata_get')
 import fs = require('fs');
 import {CollectionResult} from "../../base/get/odata_get";
-import {EntityResult} from "../../base/get/odata_get";
+import {EntityResult} from "../../base/BaseRequestHandler";
 import {ServiceDocumentResult} from "../../base/get/odata_get";
 import {Metadata} from "../../base/metadata/metadata";
 

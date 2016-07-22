@@ -1,4 +1,4 @@
-/// <reference path="../../typings/main.d.ts" />
+/// <reference path="../../typings/index.d.ts" />
 
 import {BaseRequestHandler} from "./BaseRequestHandler";
 import log4js = require('log4js');

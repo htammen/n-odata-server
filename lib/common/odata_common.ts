@@ -1,4 +1,4 @@
-/// <reference path="../../typings/main.d.ts" />
+/// <reference path="../../typings/index.d.ts" />
 import constants = require('../constants/odata_constants');
 import enums = require('../constants/odata_enums');
 import lbConstants = require('../constants/loopback_constants');

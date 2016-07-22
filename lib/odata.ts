@@ -1,4 +1,4 @@
-/// <reference path="../typings/main.d.ts" />
+/// <reference path="../typings/index.d.ts" />
 /**
  * This module implements the odata server functionality
  * At the moment it is implemented as local loopback component
@@ -26,6 +26,9 @@ import * as express from "express";
 // Configure logging
 // TODO: make logging more flexible, e.g. let user configure the name and location of the log file via component configuration
 import log4js = require('log4js');
+import {ODataServerConfig} from "./types/n_odata_types";
+
+
 fs.stat('n_odata_server_log.json', function(err, stat) {
 	var fileName = __dirname + '/log4js.json';
 	if(!err) {
@@ -36,7 +39,7 @@ fs.stat('n_odata_server_log.json', function(err, stat) {
 
 var logger = log4js.getLogger("odata");
 
-var oDataServerConfig;
+var oDataServerConfig:ODataServerConfig;
 
 
 /**

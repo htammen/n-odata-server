@@ -1,4 +1,4 @@
-/// <reference path="../../../typings/main.d.ts" />
+/// <reference path="../../../typings/index.d.ts" />
 
 import constants = require('../../constants/odata_constants');
 import enums = require('../../constants/odata_enums');
@@ -27,7 +27,7 @@ export class ODataPost extends ODataPostBase {
 	 */
 	handlePost(req, res) {
 
-		super._handlePost(req, res).then(postResult => {
+		super._handlePost(req, res).then((postResult:any) => {
 			var result: any = postResult.getRequestResult();
 			res.status(201).send(result);
 		}).catch(err => {
