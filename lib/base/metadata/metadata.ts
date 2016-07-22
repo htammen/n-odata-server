@@ -4,8 +4,7 @@ import log4js = require('log4js');
 import commons = require('../../common/odata_common');
 import constants = require('../../constants/odata_constants');
 import {MetaAssociation} from "./metaAssociation";
-
-var builder = require("xmlbuilder");
+import builder = require("xmlbuilder");
 
 var logger = log4js.getLogger('metadata');
 

@@ -10,7 +10,9 @@
     "express-serve-static-core": "registry:dt/express-serve-static-core#4.0.0+20160715232503",
     "log4js": "registry:dt/log4js#0.0.0+20160608042355",
     "mocha": "registry:dt/mocha#2.2.5+20160720003353",
+    "node": "registry:dt/node#6.0.0+20160720070758",
     "promises-a-plus": "registry:dt/promises-a-plus#0.0.0+20160317120654",
-    "serve-static": "registry:dt/serve-static#0.0.0+20160606155157"
+    "serve-static": "registry:dt/serve-static#0.0.0+20160606155157",
+    "xmlbuilder": "registry:dt/xmlbuilder#0.0.0+20160317120654"
   }
 }

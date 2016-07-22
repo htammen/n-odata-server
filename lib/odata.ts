@@ -41,6 +41,8 @@ var logger = log4js.getLogger("odata");
 
 var oDataServerConfig:ODataServerConfig;
 
+let that = this;
+
 
 /**
  * Exposes the main function of the n-odata-server
@@ -62,9 +64,9 @@ export = function(loopbackApplication, options) {
 	}
 
 	if (oDataServerConfig.odataversion === "4") {
-		_handleODataVersion4.call(this, loopbackApplication, options, oDataServerConfig);
+		_handleODataVersion4.call(that, loopbackApplication, options, oDataServerConfig);
 	} else if (oDataServerConfig.odataversion === "2") {
-		_handleODataVersion2.call(this, loopbackApplication, options, oDataServerConfig);
+		_handleODataVersion2.call(that, loopbackApplication, options, oDataServerConfig);
 	} else {
 		console.log("odata version " + oDataServerConfig.odataversion + " not supported yet");
 	}
@@ -147,7 +149,7 @@ function _handleODataVersion2(loopbackApplication, options, oDataServerConfig) {
 			console.log(e);
 			res.sendStatus(500);
 		}
-	});
+	}.bind(this));
 }
 
 
@@ -224,7 +226,7 @@ function _handleODataVersion4(loopbackApplication, options, oDataServerConfig) {
 			console.log(e);
 			res.sendStatus(500);
 		}
-	});
+	}.bind(this));
 }
 
 /**
