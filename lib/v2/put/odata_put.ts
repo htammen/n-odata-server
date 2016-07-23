@@ -1,6 +1,7 @@
 import commons = require('../../common/odata_common');
 import BaseRequestHandler = require('../../base/BaseRequestHandler');
 import {ODataPutBase} from "../../base/put/odata_put";
+import {PutRequestHandler} from "../../base/BaseRequestHandler";
 
 /**
  * A module for exporting PUT functions of the odata-server
@@ -8,7 +9,7 @@ import {ODataPutBase} from "../../base/put/odata_put";
  * @param loopbackApplication
  * @param options
  */
-export class ODataPut extends ODataPutBase {
+export class ODataPut extends ODataPutBase implements PutRequestHandler{
 	constructor() {
 		super()
 	};

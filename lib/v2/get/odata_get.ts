@@ -11,6 +11,7 @@ import {CollectionResult} from "../../base/get/odata_get";
 import {EntityResult} from "../../base/BaseRequestHandler";
 import {ServiceDocumentResult} from "../../base/get/odata_get";
 import {Metadata} from "../../base/metadata/metadata";
+import {GetRequestHandler} from "../../base/BaseRequestHandler";
 
 /**
  * A module for exporting common function that are used by several other
@@ -19,7 +20,7 @@ import {Metadata} from "../../base/metadata/metadata";
  * @param loopbackApplication
  * @param options
  */
-export class ODataGet extends ODataGetBase.ODataGetBase{
+export class ODataGet extends ODataGetBase.ODataGetBase implements GetRequestHandler{
 	constructor() {super()};
 
 	/**

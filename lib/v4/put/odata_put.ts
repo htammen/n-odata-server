@@ -1,6 +1,7 @@
 import enums = require('../../constants/odata_enums');
 import commons = require('../../common/odata_common');
 import BaseRequestHandler = require('../../base/BaseRequestHandler');
+import {PutRequestHandler} from "../../base/BaseRequestHandler";
 
 /**
  * A module for exporting common function that are used by several other
@@ -9,7 +10,7 @@ import BaseRequestHandler = require('../../base/BaseRequestHandler');
  * @param loopbackApplication
  * @param options
  */
-export class ODataPut extends BaseRequestHandler.BaseRequestHandler{
+export class ODataPut extends BaseRequestHandler.BaseRequestHandler implements PutRequestHandler {
 	constructor() {super()};
 
 	handlePut(req, res) {

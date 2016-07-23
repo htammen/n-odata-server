@@ -2,6 +2,7 @@
 
 import log4js = require('log4js');
 import {Response} from "express";
+import {ODataServerConfig} from "../types/n_odata_types";
 
 var logger = log4js.getLogger("base");
 
@@ -57,21 +58,47 @@ export class EntityResult {
 	};
 }
 
+export interface IBaseRequestHandler {
+	setConfig(config:ODataServerConfig);
+}
+
+/** Interface for GET requests handlers. The handler classes have to implement this interface */
+export interface GetRequestHandler extends IBaseRequestHandler{
+	handleGet(req:any, res:any);
+}
+
+/** Interface for POST requests handlers. The handler classes have to implement this interface */
+export interface PostRequestHandler extends IBaseRequestHandler{
+	handlePost(req:any, res:any);
+}
+
+/** Interface for PUT requests handlers. The handler classes have to implement this interface */
+export interface PutRequestHandler extends IBaseRequestHandler{
+	handlePut(req:any, res:any);
+	handlePatch?(req:any, res:any);
+	handleMerge?(req:any, res:any);
+}
+
+/** Interface for DELETE requests handlers. The handler classes have to implement this interface */
+export interface DeleteRequestHandler extends IBaseRequestHandler{
+	handleDelete(req:any, res:any);
+}
+
 
 /**
  * This is a base class for all OData request handler classes like odata_get, odata_put, ...
  * It exposes functions that are used by all derived classes
  * @type {BaseRequestHandler}
  */
-export class BaseRequestHandler {
-	oDataServerConfig:any;
+export class BaseRequestHandler implements IBaseRequestHandler{
+	oDataServerConfig:ODataServerConfig;
 
 	/**
 	 * sets the config object that was created from the options object of the n-odata-server component
 	 * @param config
 	 * @private
 	 */
-	setConfig(config) {
+	setConfig(config:ODataServerConfig) {
 		_setConfig.call(this, config)
 	};
 
@@ -121,7 +148,7 @@ export class BaseRequestHandler {
  * @param config
  * @private
  */
-function _setConfig(config) {
+function _setConfig(config:ODataServerConfig) {
 	logger.info("component config set to %s", JSON.stringify(config, null, '\t'));
 	this.oDataServerConfig = config;
 }

@@ -1,3 +1,7 @@
+/** Interface for loopback application */
+export interface LoopbadkApp {
+	models: any;
+}
 
 /** Interface for loopback filter definition */
 export interface LoopbackFilter {

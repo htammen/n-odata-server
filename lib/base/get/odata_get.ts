@@ -197,7 +197,7 @@ export class ODataGetBase extends BaseRequestHandler.BaseRequestHandler {
 									// if nextLink is set, means we deliver partially response, we need to know if there would be more data
 									// if the nextLink is processed. If the current data chunk is the last one we MUST NOT set the nextLink into
 									// the response
-									if (nextLink) { 
+									if (nextLink) {
 										var nlFilter:any = {};
 										nlFilter.skip = _skiptoken;
 										nlFilter.limit = 1;	// just need to test if there is at least one more record

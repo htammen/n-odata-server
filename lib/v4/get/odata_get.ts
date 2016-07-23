@@ -6,6 +6,7 @@ import commons = require('../../common/odata_common');
 import req_header = require('../../common/odata_req_header');
 import BaseRequestHandler = require('../../base/BaseRequestHandler');
 import fs = require('fs');
+import {GetRequestHandler} from "../../base/BaseRequestHandler";
 
 /**
  * A module for exporting common function that are used by several other
@@ -14,7 +15,7 @@ import fs = require('fs');
  * @param loopbackApplication
  * @param options
  */
-export class ODataGet extends BaseRequestHandler.BaseRequestHandler{
+export class ODataGet extends BaseRequestHandler.BaseRequestHandler implements GetRequestHandler{
 	constructor() {super()};
 
 	handleGet(req, res) {

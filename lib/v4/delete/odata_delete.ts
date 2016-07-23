@@ -1,5 +1,6 @@
 import commons = require('../../common/odata_common');
 import BaseRequestHandler = require('../../base/BaseRequestHandler');
+import {DeleteRequestHandler} from "../../base/BaseRequestHandler";
 
 /**
  * A module for exporting DELETE functions of the odata-server
@@ -7,7 +8,7 @@ import BaseRequestHandler = require('../../base/BaseRequestHandler');
  * @param loopbackApplication
  * @param options
  */
-export class ODataDelete extends BaseRequestHandler.BaseRequestHandler{
+export class ODataDelete extends BaseRequestHandler.BaseRequestHandler implements DeleteRequestHandler {
 	constructor() {super()};
 
 	handleDelete(req, res) {

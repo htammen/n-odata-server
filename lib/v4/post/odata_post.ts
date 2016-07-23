@@ -1,5 +1,6 @@
 import commons = require('../../common/odata_common');
 import BaseRequestHandler = require('../../base/BaseRequestHandler');
+import {PostRequestHandler} from "../../base/BaseRequestHandler";
 
 /**
  * A module for exporting common function that are used by several other
@@ -8,7 +9,7 @@ import BaseRequestHandler = require('../../base/BaseRequestHandler');
  * @param loopbackApplication
  * @param options
  */
-export class ODataPost extends BaseRequestHandler.BaseRequestHandler{
+export class ODataPost extends BaseRequestHandler.BaseRequestHandler implements PostRequestHandler {
 	constructor() {super()};
 
 	handlePost(req, res) {
