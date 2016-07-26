@@ -7,20 +7,6 @@ There are already some solutions at npm. These did not fulfill our requirements 
 * Support for local file system database (light weight)
 * Support for nearly the complete OData API
 
-## Current state of the project
-__Even though we are working hard we need some more time to have a version that
-supports most of the OData specification.
-Please stay tuned or contribute to the project if you want quicker results.__
-
-If you want to contribute send us an email to [`h.tammen@tammen-it-solutions.de`](mailto:h.tammen@tammen-it-solutions.de).
-We are collaborating via a [Slack Team](https://slack.com/) and will invite you to this as soon as we receive a request for contribution.
-We manage our tasks via [zube.io](https://zube.io). We will also authorize you to our zube scrum board if you want to contribute to the project.
-
-We have currently implemented some very basic OData functionality (see below) that allows you to use some basic CRUD operations on your data. We try to implement some more useful functionality soon.
-
-### Release Notes
-To see what's implemented yet have a look at our [release notes](https://github.com/htammen/n-odata-server/wiki/Release%20Notes)
-
 ## Background
 
 ### OData
@@ -194,6 +180,27 @@ look at this [presentation](http://prezi.com/dznggtj0zjlo/?utm_campaign=share&ut
 
 ## Tutorials
 Have a look at our [wiki page](https://github.com/htammen/n-odata-server/wiki) for tutorials that demonstrate the usage of n-odata-server.
+
+## Current state of the project
+__Even though we are working hard we need some more time to have a version that
+supports most of the OData specification.
+Please stay tuned or contribute to the project if you want quicker results.__
+
+We have currently implemented some but not all OData functionality (see below). You should be able to use most of the basic CRUD operations
+on your data. We try to implement some more useful functionality as soon as possible. Additionally we make currently available functionality
+more stable every day.
+
+### Release Notes
+To see what's implemented yet have a look at our [release notes](https://github.com/htammen/n-odata-server/wiki/Release%20Notes)
+
+## Contribute
+If you want to contribute send us an email to [`h.tammen@tammen-it-solutions.de`](mailto:h.tammen@tammen-it-solutions.de).
+We are collaborating / communication via [Slack](https://slack.com/) and will invite you to our team as soon as we receive a request for contribution.
+We manage our tasks via [zube.io](https://zube.io). We will also authorize you to our zube scrum board if you want to contribute to the project.
+
+You can also have a look at the [DEV_NOTES.md](DEV_NOTEST.md) file to get more details about our development process.
+
+
 
 ## License
 This project is licensed under the MIT license. See the [LICENSE](LICENSE) file for more info.
