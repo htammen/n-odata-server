@@ -11,6 +11,7 @@ import {LoopbackRelationDefinition} from "../../lib/types/loopbacktypes";
 import {ODataGetBase} from "../../../lib/base/get/odata_get";
 import {Request} from "express-serve-static-core";
 import {Response} from "express-serve-static-core";
+import proxyquire = require("proxyquire");
 
 /* see here for a good description of chai-as-promised: http://www.sitepoint.com/promises-in-javascript-unit-tests-the-definitive-guide/ */
 
@@ -25,20 +26,35 @@ describe("ODataGetBase", function() {
 		var sut:ODataGetBase;
 
 		beforeEach(function () {
-			sut = new ODataGetBase();
 		});
 
-		it("should return ordered collection", function () {
+		it("should be rejected cause no ModelClass can be found", function () {
 			// TODO: implement a lot of tests here
 			let req:any = {
-				url: "http://localhost:3000/Customer?$orderby=quantity"
+				url: "http://localhost:3000/Customer?$orderby=quantity",
+				app: {
+					models: () => {}
+				},
+				params: [
+					"one"
+				]
 			};
 			let res:any = {
 				status: 0
 			};
-			//let promise = sut._getCollectionData(req, res);
-			//return promise.should.eventually.be.null;
-			return expect(true).to.be.true;
+
+			// Stubbing the commons module that is used in metadata.ts
+			let commonsStub:any = {};
+			commonsStub.getRequestModelClass = (models, param) => {
+				return Promise.resolve({});
+			};
+			// create the proxyquire proxy for metadata with the injected module stubs
+			let sutProxy = proxyquire("../../../lib/base/get/odata_get", {'../../common/odata_common': commonsStub});
+
+			sut = new sutProxy.ODataGetBase();
+
+			let promise = sut._getCollectionData(req, res);
+			return promise.should.eventually.be.rejected;
 		});
 	});
 });

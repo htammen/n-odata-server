@@ -1,8 +1,7 @@
 "use strict";
 var chai = require("chai");
-var chai_1 = require("chai");
 var chaiAsPromised = require("chai-as-promised");
-var odata_get_1 = require("../../../lib/base/get/odata_get");
+var proxyquire = require("proxyquire");
 describe("ODataGetBase", function () {
     before(function () {
         chai.use(chaiAsPromised);
@@ -11,16 +10,28 @@ describe("ODataGetBase", function () {
     describe("_getCollectionData", function () {
         var sut;
         beforeEach(function () {
-            sut = new odata_get_1.ODataGetBase();
         });
-        it("should return ordered collection", function () {
+        it("should be rejected cause no ModelClass can be found", function () {
             var req = {
-                url: "http://localhost:3000/Customer?$orderby=quantity"
+                url: "http://localhost:3000/Customer?$orderby=quantity",
+                app: {
+                    models: function () { }
+                },
+                params: [
+                    "one"
+                ]
             };
             var res = {
                 status: 0
             };
-            return chai_1.expect(true).to.be.true;
+            var commonsStub = {};
+            commonsStub.getRequestModelClass = function (models, param) {
+                return Promise.resolve({});
+            };
+            var sutProxy = proxyquire("../../../lib/base/get/odata_get", { '../../common/odata_common': commonsStub });
+            sut = new sutProxy.ODataGetBase();
+            var promise = sut._getCollectionData(req, res);
+            return promise.should.eventually.be.rejected;
         });
     });
 });
