@@ -6,7 +6,8 @@
   "scripts": {
     "_pretest": "jshint .",
     "test": "istanbul test mocha -- --recursive",
-    "coverage": "istanbul cover _mocha -- --recursive"
+    "coverage": "istanbul cover _mocha -- --recursive",
+    "updproject": "node ./scripts/update_project.js"
   },
   "dependencies": {
     "log4js": "^0.6.31",

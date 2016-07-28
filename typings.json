@@ -17,6 +17,7 @@
     "node": "registry:dt/node#6.0.0+20160720070758",
     "promises-a-plus": "registry:dt/promises-a-plus#0.0.0+20160317120654",
     "serve-static": "registry:dt/serve-static#0.0.0+20160606155157",
+    "shelljs": "registry:dt/shelljs#0.0.0+20160526131156",
     "xmlbuilder": "registry:dt/xmlbuilder#0.0.0+20160317120654"
   }
 }
