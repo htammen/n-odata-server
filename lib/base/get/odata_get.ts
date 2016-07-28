@@ -251,6 +251,11 @@ export class ODataGetBase extends BaseRequestHandler.BaseRequestHandler {
 									for(var rel in ModelClass.relations) {
 										this._createDeferredObject(object, rel, req, ModelClass, object.getId());
 									}
+									
+									//create metadata for expanded
+									for (var rel in ModelClass.relations) {
+										this._createMetadataForExpanded(object, rel, req, ModelClass.relations[rel].modelTo, object.getId(), data);
+									}
 								}).bind(this));
 								// add retrieved data from backend / db to the result
 								result.data = data;
@@ -408,6 +413,11 @@ export class ODataGetBase extends BaseRequestHandler.BaseRequestHandler {
 								var result:EntityResult = new EntityResult();
 								result.data = instance.toJSON();
 
+								//create metadata for expanded
+								for (var rel in ModelClass.relations) {
+									this._createMetadataForExpanded(instance, rel, req, ModelClass.relations[rel].modelTo, id, result.data);
+								}
+
 								//add metadata
 								let propertyType:String = commons.convertType(ModelClass.definition._ids[0].property)
 								let sKey:string;
@@ -444,6 +454,52 @@ export class ODataGetBase extends BaseRequestHandler.BaseRequestHandler {
 		});
 	}
 
+	/**
+	 * Helper method for generating a metadata in deferred entry
+	 * @param instance
+	 * @param rel
+	 * @param req
+	 * @param ModelClass
+	 * @param id
+	 * @param expandedData
+	 * @private
+	 */
+	_createMetadataForExpanded = function (instance, rel, req, ModelClass, id, expandedData) {
+		if (expandedData[rel].__deferred) {
+			return;
+		}
+		else {
+			var propertyType = commons.convertType(ModelClass.definition._ids[0].property);
+			switch (propertyType) {
+				case "Edm.Decimal":
+				case "Edm.Int32":
+					expandedData[rel].map(function(oData){
+						oData.__metadata = {
+							uri: commons.getBaseURL(req) + '/' + commons.getPluralForModel(ModelClass) + '(' + oData.id + ')',
+							type: constants.ODATA_NAMESPACE + '.' + ModelClass.definition.name
+						};
+						return oData;
+					});
+					break;
+				default:
+					if(expandedData[rel] instanceof Array){
+						expandedData[rel].map(function(oData){
+							oData.__metadata = {
+								uri: commons.getBaseURL(req) + '/' + commons.getPluralForModel(ModelClass) + '(\'' + oData.id + '\')',
+								type: constants.ODATA_NAMESPACE + '.' + ModelClass.definition.name
+							};
+							return oData;
+						});
+					}else{
+						expandedData[rel].__metadata = {
+							uri: commons.getBaseURL(req) + '/' + commons.getPluralForModel(ModelClass) + '(\'' + expandedData[rel].id + '\')',
+							type: constants.ODATA_NAMESPACE + '.' + ModelClass.definition.name
+						};
+					}
+					break;
+			}
+		}
+	};
 
 	/**
 	 * Helper method for generating a deferred entry
