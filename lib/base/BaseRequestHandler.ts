@@ -47,21 +47,8 @@ export class EntityResult {
             for (var prop in retValue.d) {
                 if (retValue.d[prop] instanceof Date) {
                     retValue.d[prop] = "/Date(" + retValue.d[prop].getTime() + ")/";
-                } else if (retValue.d[prop] instanceof Array) {
-                    for (var expanded in retValue.d[prop]) {
-                        for (var property in retValue.d[prop][expanded]) {
-                            if (retValue.d[prop][expanded][property] instanceof Date) {
-                                retValue.d[prop][expanded][property] = "/Date(" + retValue.d[prop][expanded][property].getTime() + ")/";
-                            }
-                        }
-                    }
-                } else if (retValue.d[prop] instanceof Object) {
-                    for (var property in retValue.d[prop]) {
-                        if (retValue.d[prop][property] instanceof Date) {
-                            retValue.d[prop][property] = "/Date(" + retValue.d[prop][property].getTime() + ")/";
-                        }
-
-                    }
+                } else {
+                    this.handleDateExpandedProperties(retValue.d[prop]);
                 }
             }
             return retValue;
@@ -71,6 +58,34 @@ export class EntityResult {
             return retValue2;
         }
     };
+
+    private handleDateExpandedProperties(oExpanded:any):void {
+        if (oExpanded instanceof Array) {
+            for (var expanded in oExpanded) {
+                for (var property in oExpanded[expanded]) {
+                    if (oExpanded[expanded][property] instanceof Date) {
+                        oExpanded[expanded][property] = "/Date(" + oExpanded[expanded][property].getTime() + ")/";
+                    } else {
+                        if (oExpanded[expanded][property] instanceof Array || oExpanded[expanded][property] instanceof Object) {
+                            this.handleDateExpandedProperties(oExpanded[expanded][property]);
+                        }
+                    }
+                }
+            }
+        } else if (oExpanded instanceof Object) {
+            for (var property in oExpanded) {
+                if (oExpanded[property] instanceof Date) {
+                    oExpanded[property] = "/Date(" + oExpanded[property].getTime() + ")/";
+                }
+                else {
+                    if (oExpanded[property] instanceof Array || oExpanded[property] instanceof Object) {
+                        this.handleDateExpandedProperties(oExpanded[property]);
+                    }
+                }
+
+            }
+        }
+    }
 }
 
 export interface IBaseRequestHandler {
