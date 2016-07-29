@@ -261,7 +261,7 @@ function _getIdByPropertyType(sRawId, property) {
  * @param  {[type]} requestUri      the request uri
  * @return {[type]}                Promise that resolves to a ModelClass
  */
-function _getRequestModelClass(models, requestUri) {
+function _getRequestModelClass(models:Function, requestUri:string) {
     var reqParts = /^([^/(]+)(?:[(](.*)[)])?(?:[/]([A-Za-z]+))?/g.exec(requestUri);
     if (!reqParts[3]) {
         return new Promise(function (resolve, reject) {

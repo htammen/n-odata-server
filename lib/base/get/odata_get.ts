@@ -200,7 +200,7 @@ export class ODataGetBase extends BaseRequestHandler.BaseRequestHandler {
     _getCollectionData(req, res) {
         return new Promise((resolve, reject) => {
             //DONE: The odata.nextLink annotation MUST be included in a response that represents a partial result. "@odata.nextLink": "...?$skiptoken=342r89"
-            commons.getRequestModelClass(req.app.models, req.params[0]).then((function (oResult:RequestModelClass) {
+            commons.getRequestModelClass(req.app.models as Function, req.params[0] as string).then((function (oResult:RequestModelClass) {
                 var ModelClass = oResult.modelClass;
                 try {
                     if (ModelClass) {
