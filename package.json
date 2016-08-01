@@ -1,6 +1,6 @@
 {
   "name": "n-odata-server",
-  "version": "0.3.14",
+  "version": "0.3.15",
   "description": "OData server for loopback framework",
   "main": "index.js",
   "scripts": {
