@@ -5,6 +5,7 @@ import commons = require('../../common/odata_common');
 import constants = require('../../constants/odata_constants');
 import {MetaAssociation} from "./metaAssociation";
 import builder = require("xmlbuilder");
+import {LoopbackModelProperty} from "../../types/loopbacktypes";
 
 var logger = log4js.getLogger('metadata');
 
@@ -40,7 +41,7 @@ export class Metadata {
 				// Properties of EntityType
 				var arrProps:Array<Object> = [];
 				model.definition.columnNames().forEach((function (propName) {
-					var property:any = model.definition.properties[propName];
+					var property:LoopbackModelProperty = model.definition.properties[propName];
 
 					// exclude deprecated properties
 					if (property.deprecated !== true) {

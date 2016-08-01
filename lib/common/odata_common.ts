@@ -16,21 +16,21 @@ var oDataServerConfig;
  * @param options
  */
 export = {
-	setConfig: _setConfig,
-	getBaseURL: _getBaseURL,
-	getRequestType: _getRequestType,
-	getIdFromUrlParameter: _getIdFromUrlParameter,
-	getPluralForModel: _getPluralForModel,
-	getModelClass: _getModelClass,
-	getRequestModelClass: _getRequestModelClass,
-	getIdByPropertyType: _getIdByPropertyType,
-	convertType: _convertType
+    setConfig: _setConfig,
+    getBaseURL: _getBaseURL,
+    getRequestType: _getRequestType,
+    getIdFromUrlParameter: _getIdFromUrlParameter,
+    getPluralForModel: _getPluralForModel,
+    getModelClass: _getModelClass,
+    getRequestModelClass: _getRequestModelClass,
+    getIdByPropertyType: _getIdByPropertyType,
+    convertType: _convertType
 };
 
 var logger = log4js.getLogger("odata");
 
 function _setConfig(config) {
-	oDataServerConfig = config;
+    oDataServerConfig = config;
 }
 
 
@@ -43,8 +43,17 @@ function _setConfig(config) {
  * @private
  */
 function _getBaseURL(req) {
-	return req.protocol + '://' + req.hostname +
-		':' + req.app.get('port') + '/' + oDataServerConfig.odataPrefix;
+    //handle reverse proxy for metadata URI (using X-Forwarded-Host header)
+    if (req.headers["x-forwarded-host"]) {
+        if (req.headers["x-forwarded-proto"]) {
+            return req.headers["x-forwarded-proto"] + '://' + req.headers["x-forwarded-host"] +
+                '/' + oDataServerConfig.odataPrefix;
+        }
+        return req.protocol + '://' + req.headers["x-forwarded-host"] +
+            '/' + oDataServerConfig.odataPrefix;
+    }
+    return req.protocol + '://' + req.hostname +
+        ':' + req.app.get('port') + '/' + oDataServerConfig.odataPrefix;
 }
 
 /**
@@ -60,7 +69,7 @@ function _getBaseURL(req) {
  * - Entity Reference
  * - Property Value                 | http://host/service/Customers(1)/Addresses
  * - Collection of Complex or Primitive Types
- * 																| http://host/service/TopFiveHobbies()
+ *                                                                | http://host/service/TopFiveHobbies()
  * - Complex or Primitive Typ       | http://host/service/MostPopularName()
  * - Operation Result               | http://host/service/TopFiveCustomers{}
  *
@@ -68,25 +77,25 @@ function _getBaseURL(req) {
  * @return {[type]}     [description]
  */
 function _getRequestType(req) {
-	var retValue = enums.GetRequestTypeEnum.UNDEFINED;
-	var param0: string = req.params[0];
-	if(req.params[0] === '')
-		retValue = enums.GetRequestTypeEnum.SERVICE;
-	else {
-		var arrParams: string[] = param0.split('/');
-		if(param0.toUpperCase() === "$METADATA") {
-			retValue = enums.GetRequestTypeEnum.METADATA;
-		}	else if(arrParams[arrParams.length-1] === '$count') {
-			retValue = enums.GetRequestTypeEnum.COLLECTION_COUNT;
-		} else if(_isRequestCollection(req)) {
-			retValue = enums.GetRequestTypeEnum.COLLECTION;
-		} else if(_isRequestEntity(req)) {
-			retValue = enums.GetRequestTypeEnum.ENTITY;
-		} else {
+    var retValue = enums.GetRequestTypeEnum.UNDEFINED;
+    var param0:string = req.params[0];
+    if (req.params[0] === '')
+        retValue = enums.GetRequestTypeEnum.SERVICE;
+    else {
+        var arrParams:string[] = param0.split('/');
+        if (param0.toUpperCase() === "$METADATA") {
+            retValue = enums.GetRequestTypeEnum.METADATA;
+        } else if (arrParams[arrParams.length - 1] === '$count') {
+            retValue = enums.GetRequestTypeEnum.COLLECTION_COUNT;
+        } else if (_isRequestCollection(req)) {
+            retValue = enums.GetRequestTypeEnum.COLLECTION;
+        } else if (_isRequestEntity(req)) {
+            retValue = enums.GetRequestTypeEnum.ENTITY;
+        } else {
 
-		}
-	}
-	return retValue;
+        }
+    }
+    return retValue;
 }
 
 
@@ -99,35 +108,35 @@ function _getRequestType(req) {
  * @private
  */
 function _isRequestCollection(req) {
-	var retValue = false;
-	var reqParts = /^([^/(]+)(?:[(](.*)[)])?(?:[/]([A-Za-z]+))?/g.exec(req.params[0]);
-	// reqParts = [full_match, model, id, property]
-	// util.inspect(reqParts);
+    var retValue = false;
+    var reqParts = /^([^/(]+)(?:[(](.*)[)])?(?:[/]([A-Za-z]+))?/g.exec(req.params[0]);
+    // reqParts = [full_match, model, id, property]
+    // util.inspect(reqParts);
 
-	var models = req.app.models();
-	models.forEach(function (model) {
-		var plural = _getPluralForModel(model);
-		if (plural === reqParts[1]) {
-			//console.log("model found: " + plural);
-			if (reqParts[2] && reqParts[3]) {
-				//console.log("navigation by key and property");
-				var modelRel = model.definition.settings.relations;
-				//in case property is a relation of type 'hasMany'
-				if (modelRel && modelRel[reqParts[3]] && modelRel[reqParts[3]].type === lbConstants.LB_REL_HASMANY) {
-					//console.log("property is a collection");
-					retValue = true;
-				} else {
-					//console.log("property is a entity");
-				}
-			} else if (!reqParts[2]) {
-				//console.log("collection is requested directly");
-				retValue = true;
-			} else {
-				//console.log("request is not a collection");
-			}
-		}
-	});
-	return retValue;
+    var models = req.app.models();
+    models.forEach(function (model) {
+        var plural = _getPluralForModel(model);
+        if (plural === reqParts[1]) {
+            //console.log("model found: " + plural);
+            if (reqParts[2] && reqParts[3]) {
+                //console.log("navigation by key and property");
+                var modelRel = model.definition.settings.relations;
+                //in case property is a relation of type 'hasMany'
+                if (modelRel && modelRel[reqParts[3]] && modelRel[reqParts[3]].type === lbConstants.LB_REL_HASMANY) {
+                    //console.log("property is a collection");
+                    retValue = true;
+                } else {
+                    //console.log("property is a entity");
+                }
+            } else if (!reqParts[2]) {
+                //console.log("collection is requested directly");
+                retValue = true;
+            } else {
+                //console.log("request is not a collection");
+            }
+        }
+    });
+    return retValue;
 }
 
 /**
@@ -136,35 +145,35 @@ function _isRequestCollection(req) {
  * @private
  */
 function _isRequestEntity(req) {
-	var retValue = false;
-	var reqParts = /^([^/(]+)(?:[(](.*)[)])?(?:[/]([A-Za-z]+))?/g.exec(req.params[0]);
-			// reqParts = [full_match, model, id, property]
-			//util.inspect(reqParts);
-	var models = req.app.models();
-	models.forEach(function (model) {
-		var plural = _getPluralForModel(model);
-		if (plural === reqParts[1]) {
-			//console.log("model found: " + plural);
-			if (reqParts[2] && reqParts[3]) {
-				//console.log("navigation by key and property");
-				var modelRel = model.definition.settings.relations;
-				//in case property is a relation of type 'hasMany'
-				if (modelRel && modelRel[reqParts[3]] && (modelRel[reqParts[3]].type === lbConstants.LB_REL_BELONGSTO || modelRel[reqParts[3]].type === lbConstants.LB_REL_HASONE)) {
-					//console.log("property is a entity");
-					retValue = true;
-				} else {
-					//console.log("property is a collection");
-				}
-			} else if (reqParts[2]) {
-				//console.log("entity is requested by id");
-				retValue = true;
-			} else {
-				//console.log("collection is requested directly");
-			}
+    var retValue = false;
+    var reqParts = /^([^/(]+)(?:[(](.*)[)])?(?:[/]([A-Za-z]+))?/g.exec(req.params[0]);
+    // reqParts = [full_match, model, id, property]
+    //util.inspect(reqParts);
+    var models = req.app.models();
+    models.forEach(function (model) {
+        var plural = _getPluralForModel(model);
+        if (plural === reqParts[1]) {
+            //console.log("model found: " + plural);
+            if (reqParts[2] && reqParts[3]) {
+                //console.log("navigation by key and property");
+                var modelRel = model.definition.settings.relations;
+                //in case property is a relation of type 'hasMany'
+                if (modelRel && modelRel[reqParts[3]] && (modelRel[reqParts[3]].type === lbConstants.LB_REL_BELONGSTO || modelRel[reqParts[3]].type === lbConstants.LB_REL_HASONE)) {
+                    //console.log("property is a entity");
+                    retValue = true;
+                } else {
+                    //console.log("property is a collection");
+                }
+            } else if (reqParts[2]) {
+                //console.log("entity is requested by id");
+                retValue = true;
+            } else {
+                //console.log("collection is requested directly");
+            }
 
-		}
-	});
-	return retValue;
+        }
+    });
+    return retValue;
 }
 
 
@@ -176,12 +185,12 @@ function _isRequestEntity(req) {
  * @returns {string}
  * @private
  */
-function _getPluralForModel(model: LoopbackModelClass): string {
-	var plural = model.definition.settings.plural;
-	if (!plural) {
-		plural = model.definition.name + 's';
-	}
-	return plural;
+function _getPluralForModel(model:LoopbackModelClass):string {
+    var plural = model.definition.settings.plural;
+    if (!plural) {
+        plural = model.definition.name + 's';
+    }
+    return plural;
 }
 
 
@@ -195,15 +204,15 @@ function _getPluralForModel(model: LoopbackModelClass): string {
  * @private
  */
 function _getIdFromUrlParameter(param0) {
-	console.log("'_getIdFromUrlParameter' is DEPRECATED! Please use '_getIdByPropertyType' instead.")
-	var retValue = param0.substring(param0.indexOf('(') + 1, param0.indexOf(')'));
-	if(retValue.startsWith("'") || retValue.startsWith("\"")) {
-		retValue = retValue.substring(1, retValue.length-1);
-	}
-	if(retValue.endsWith('M')) {
-		retValue = retValue.substr(0, retValue.length-1);
-	}
-	return retValue;
+    console.log("'_getIdFromUrlParameter' is DEPRECATED! Please use '_getIdByPropertyType' instead.")
+    var retValue = param0.substring(param0.indexOf('(') + 1, param0.indexOf(')'));
+    if (retValue.startsWith("'") || retValue.startsWith("\"")) {
+        retValue = retValue.substring(1, retValue.length - 1);
+    }
+    if (retValue.endsWith('M')) {
+        retValue = retValue.substr(0, retValue.length - 1);
+    }
+    return retValue;
 }
 
 /**
@@ -217,32 +226,32 @@ function _getIdFromUrlParameter(param0) {
  * @private
  */
 function _getIdByPropertyType(sRawId, property) {
-	var id;
-	switch (_convertType(property)) {
-	case "Edm.String":
-		//search for anything enclosed by ''
-		 id = (/^['](.*)[']$/g.exec(sRawId)||[undefined, undefined])[1];
-		break;
-	case "Edm.Decimal":
-		 id = /^[0-9]+.[0-9]+/g.exec(sRawId)[0];
-		break;
-	default:
-		//for MongoDB generated id collumns
-		if(property.generated === true && typeof sRawId !== "undefined"){
-			//if URL starts with ', needs to work too
-			if(sRawId.charAt(0) === "'"){
-				//search for anything enclosed by ''
-				id = (/^['](.*)[']$/g.exec(sRawId)||[undefined, undefined])[1];
-			} else {
-				id = sRawId;
-			}
-		}else{
-			//other cases, validating type Edm type
-			id = sRawId;
-		}
-		break;
-	}
-	return id;
+    var id;
+    switch (_convertType(property)) {
+        case "Edm.String":
+            //search for anything enclosed by ''
+            id = (/^['](.*)[']$/g.exec(sRawId) || [undefined, undefined])[1];
+            break;
+        case "Edm.Decimal":
+            id = /^[0-9]+.[0-9]+/g.exec(sRawId)[0];
+            break;
+        default:
+            //for MongoDB generated id collumns
+            if (property.generated === true && typeof sRawId !== "undefined") {
+                //if URL starts with ', needs to work too
+                if (sRawId.charAt(0) === "'") {
+                    //search for anything enclosed by ''
+                    id = (/^['](.*)[']$/g.exec(sRawId) || [undefined, undefined])[1];
+                } else {
+                    id = sRawId;
+                }
+            } else {
+                //other cases, validating type Edm type
+                id = sRawId;
+            }
+            break;
+    }
+    return id;
 }
 
 
@@ -252,81 +261,98 @@ function _getIdByPropertyType(sRawId, property) {
  * @param  {[type]} requestUri      the request uri
  * @return {[type]}                Promise that resolves to a ModelClass
  */
-function _getRequestModelClass(models, requestUri) {
-	var reqParts = /^([^/(]+)(?:[(](.*)[)])?(?:[/]([A-Za-z]+))?/g.exec(requestUri);
-	if (!reqParts[3]) {
-		return new Promise(function (resolve, reject) {
-			_getModelClass(models, reqParts[1]).then(function (ModelClass) {
-				var sRequestId = _getIdByPropertyType(reqParts[2], ModelClass.definition._ids[0].property);
-				resolve({modelClass: ModelClass, foreignKeyFilter: undefined, requestId: sRequestId} as RequestModelClass);
-			}
-		)});
-	} else {
-		return new Promise(function (resolve, reject) {
-			_getModelClass(models, reqParts[1]).then(function (BaseModelClass) {
-				var modelProps = BaseModelClass.definition.properties;
-				var modelRel = BaseModelClass.settings.relations;
-				if (modelRel && modelRel[reqParts[3]]) {
-					var oFilter = {}, sForeignKey = modelRel[reqParts[3]].foreignKey;
-					if (sForeignKey == "") {
-						sForeignKey = reqParts[3] + "Id";
-					}
-					let idName = BaseModelClass.getIdName();
-					var sRequestId = _getIdByPropertyType(reqParts[2], BaseModelClass.definition.properties[idName]);
+function _getRequestModelClass(models:Function, requestUri:string) {
+    var reqParts = /^([^/(]+)(?:[(](.*)[)])?(?:[/]([A-Za-z]+))?/g.exec(requestUri);
+    if (!reqParts[3]) {
+        return new Promise(function (resolve, reject) {
+            _getModelClass(models, reqParts[1]).then(function (ModelClass) {
+                    var sRequestId = _getIdByPropertyType(reqParts[2], ModelClass.definition._ids[0].property);
+                    resolve({
+                        modelClass: ModelClass,
+                        foreignKeyFilter: undefined,
+                        requestId: sRequestId
+                    } as RequestModelClass);
+                }
+            )
+        });
+    } else {
+        return new Promise(function (resolve, reject) {
+            _getModelClass(models, reqParts[1]).then(function (BaseModelClass) {
+                var modelProps = BaseModelClass.definition.properties;
+                var modelRel = BaseModelClass.settings.relations;
+                if (modelRel && modelRel[reqParts[3]]) {
+                    var oFilter = {}, sForeignKey = modelRel[reqParts[3]].foreignKey;
+                    if (sForeignKey == "") {
+                        sForeignKey = reqParts[3] + "Id";
+                    }
+                    let idName = BaseModelClass.getIdName();
+                    var sRequestId = _getIdByPropertyType(reqParts[2], BaseModelClass.definition.properties[idName]);
 
-					switch (modelRel[reqParts[3]].type) {
-						case lbConstants.LB_REL_HASMANY:
-							//TODO: composite id support
-							oFilter[sForeignKey] = sRequestId;
-							//oFilter[sForeignKey] = reqParts[2];
-							if(!oFilter[sForeignKey]) {
-								reject("Invalid id");
-							} else {
-								_getModelClass(models, modelRel[reqParts[3]].model).then(function (ModelClass) {
-									resolve({modelClass: ModelClass, foreignKeyFilter: oFilter, requestId: sRequestId} as RequestModelClass);
-								});
-							}
-							break;
-						case lbConstants.LB_REL_BELONGSTO:
-							BaseModelClass.findById(sRequestId, function (error, instance) {
-								if (instance) {
-									_getModelClass(models, modelRel[reqParts[3]].model).then(function (ModelClass) {
-										let idName = ModelClass.getIdName();
-										oFilter[idName] = instance[sForeignKey];
-										resolve({modelClass: ModelClass, foreignKeyFilter: oFilter, requestId: sRequestId} as RequestModelClass);
-									});
-								} else {
-									reject("Entity not found!");
-								}
-							});
-							break;
-						case lbConstants.LB_REL_HASONE:
-							//TODO: composite id support
-							oFilter[sForeignKey] = sRequestId;
-							//oFilter[sForeignKey] = reqParts[2];
-							if(!oFilter[sForeignKey]) {
-								reject("Invalid id");
-							} else {
-								_getModelClass(models, modelRel[reqParts[3]].model).then(function (ModelClass) {
-									resolve({modelClass: ModelClass, foreignKeyFilter: oFilter, requestId: sRequestId} as RequestModelClass);
-								});
-							}
-							break;
-						default:
-							var str = modelRel[reqParts[3]].type + " relations not supported yet";
-							logger.warn(str);
-							reject(str);
-							break;
-						//TODO: lbConstants.LB_REL_HASONE
-					}
+                    switch (modelRel[reqParts[3]].type) {
+                        case lbConstants.LB_REL_HASMANY:
+                            //TODO: composite id support
+                            oFilter[sForeignKey] = sRequestId;
+                            //oFilter[sForeignKey] = reqParts[2];
+                            if (!oFilter[sForeignKey]) {
+                                reject("Invalid id");
+                            } else {
+                                _getModelClass(models, modelRel[reqParts[3]].model).then(function (ModelClass) {
+                                    resolve({
+                                        modelClass: ModelClass,
+                                        foreignKeyFilter: oFilter,
+                                        requestId: sRequestId
+                                    } as RequestModelClass);
+                                });
+                            }
+                            break;
+                        case lbConstants.LB_REL_BELONGSTO:
+                            BaseModelClass.findById(sRequestId, function (error, instance) {
+                                if (instance) {
+                                    _getModelClass(models, modelRel[reqParts[3]].model).then(function (ModelClass) {
+                                        let idName = ModelClass.getIdName();
+                                        oFilter[idName] = instance[sForeignKey];
+                                        resolve({
+                                            modelClass: ModelClass,
+                                            foreignKeyFilter: oFilter,
+                                            requestId: sRequestId
+                                        } as RequestModelClass);
+                                    });
+                                } else {
+                                    reject("Entity not found!");
+                                }
+                            });
+                            break;
+                        case lbConstants.LB_REL_HASONE:
+                            //TODO: composite id support
+                            oFilter[sForeignKey] = sRequestId;
+                            //oFilter[sForeignKey] = reqParts[2];
+                            if (!oFilter[sForeignKey]) {
+                                reject("Invalid id");
+                            } else {
+                                _getModelClass(models, modelRel[reqParts[3]].model).then(function (ModelClass) {
+                                    resolve({
+                                        modelClass: ModelClass,
+                                        foreignKeyFilter: oFilter,
+                                        requestId: sRequestId
+                                    } as RequestModelClass);
+                                });
+                            }
+                            break;
+                        default:
+                            var str = modelRel[reqParts[3]].type + " relations not supported yet";
+                            logger.warn(str);
+                            reject(str);
+                            break;
+                        //TODO: lbConstants.LB_REL_HASONE
+                    }
 
 
-				} else {
-					resolve({modelClass: BaseModelClass} as RequestModelClass);
-				}
-			});
-		});
-	}
+                } else {
+                    resolve({modelClass: BaseModelClass} as RequestModelClass);
+                }
+            });
+        });
+    }
 }
 
 /**
@@ -336,38 +362,39 @@ function _getRequestModelClass(models, requestUri) {
  * @param  {[type]} className      The name of the class
  * @return {[type]}                Promise that resolves to a ModelClass
  */
-function _getModelClass(models: Function, className: string) {
-	return new Promise<any>((resolve, reject) => {
-		var ModelClass;
+function _getModelClass(models:Function, className:string) {
+    return new Promise<any>((resolve, reject) => {
+        var ModelClass;
 
-		if(className.indexOf('(') !== -1) {
-			// its a request for a single entity object
-			className = className.substr(0, className.indexOf('('));
-		} else {
-			// Try to get the singular class first
-			ModelClass = models[className];
-		}
+        if (className.indexOf('(') !== -1) {
+            // its a request for a single entity object
+            className = className.substr(0, className.indexOf('('));
+        } else {
+            // Try to get the singular class first
+            ModelClass = models[className];
+        }
 
-		// Now try to get the class by it's plural definition
-		// In this case its a collection
-		if(!ModelClass) {
-			for(var modelStr in models) {
-				var model = models[modelStr];
-				if(model.definition.settings.plural === className) {
-					ModelClass = model;
-					break;  // return from forEach
-				} else {
-					var plural = model.definition.name + 's';
-					if(plural === className) {
-						ModelClass = model;
-						break;	// return from forEach
-					}
-				}
-			};
-		}
+        // Now try to get the class by it's plural definition
+        // In this case its a collection
+        if (!ModelClass) {
+            for (var modelStr in models) {
+                var model = models[modelStr];
+                if (model.definition.settings.plural === className) {
+                    ModelClass = model;
+                    break;  // return from forEach
+                } else {
+                    var plural = model.definition.name + 's';
+                    if (plural === className) {
+                        ModelClass = model;
+                        break;	// return from forEach
+                    }
+                }
+            }
+            ;
+        }
 
-		resolve( ModelClass );
-	})
+        resolve(ModelClass);
+    })
 }
 
 /**
@@ -376,33 +403,33 @@ function _getModelClass(models: Function, className: string) {
  * @private
  */
 function _convertType(property:any):String {
-	var retValue:String;
-	var dbType = property.type.name;
-	switch (dbType) {
-		case "String":
-			retValue = "Edm.String";
-			break;
+    var retValue:String;
+    var dbType = property.type.name;
+    switch (dbType) {
+        case "String":
+            retValue = "Edm.String";
+            break;
 
-		case "Date":
-			retValue = "Edm.DateTime"
-			break;
+        case "Date":
+            retValue = "Edm.DateTime"
+            break;
 
-		case "Number":
-			if (property.id) {
-				retValue = "Edm.Int32"
-			} else {
-				retValue = "Edm.Decimal"
-			}
-			break;
+        case "Number":
+            if (property.id) {
+                retValue = "Edm.Int32"
+            } else {
+                retValue = "Edm.Decimal"
+            }
+            break;
 
-		case "Boolean":
-			retValue = "Edm.Boolean"
-			break;
+        case "Boolean":
+            retValue = "Edm.Boolean"
+            break;
 
-		default:
-			break;
-	}
-	return retValue;
+        default:
+            break;
+    }
+    return retValue;
 }
 
 

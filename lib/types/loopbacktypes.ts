@@ -74,3 +74,11 @@ export interface LoopbackModelClass {
 	find: Function,
 	create: Function
 }
+
+export interface LoopbackModelProperty {
+	deprecated?: boolean,
+	type?: {
+		name: string
+	},
+	id: string
+}

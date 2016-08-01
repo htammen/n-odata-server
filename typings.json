@@ -1,10 +1,14 @@
 {
   "dependencies": {
-    "mime": "registry:npm/mime#1.3.0+20160423043021"
+    "assertion-error": "registry:npm/assertion-error#1.0.0+20160723033700",
+    "chai": "registry:npm/chai#3.5.0+20160723033700",
+    "chai-as-promised": "registry:npm/chai-as-promised#5.1.0+20160310030142",
+    "mime": "registry:npm/mime#1.3.0+20160423043021",
+    "proxyquire": "registry:npm/proxyquire#1.0.0+20160723033700",
+    "sinon": "registry:npm/sinon#1.16.0+20160723033700",
+    "sinon-chai": "registry:npm/sinon-chai#2.8.0+20160310030142"
   },
   "globalDependencies": {
-    "chai": "registry:dt/chai#3.4.0+20160601211834",
-    "chai-as-promised": "registry:dt/chai-as-promised#0.0.0+20160423070304",
     "es6-promise": "registry:dt/es6-promise#0.0.0+20160614011821",
     "express": "registry:dt/express#4.0.0+20160708185218",
     "express-serve-static-core": "registry:dt/express-serve-static-core#4.0.0+20160715232503",
@@ -13,6 +17,7 @@
     "node": "registry:dt/node#6.0.0+20160720070758",
     "promises-a-plus": "registry:dt/promises-a-plus#0.0.0+20160317120654",
     "serve-static": "registry:dt/serve-static#0.0.0+20160606155157",
+    "shelljs": "registry:dt/shelljs#0.0.0+20160526131156",
     "xmlbuilder": "registry:dt/xmlbuilder#0.0.0+20160317120654"
   }
 }

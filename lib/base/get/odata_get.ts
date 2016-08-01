@@ -18,13 +18,13 @@ import {Response} from "express-serve-static-core";
 
 /** Interface for metadata of OData */
 interface Metadata {
-	uri: String,
-	type: String,
-	etag?: String
+	uri:String,
+	type:String,
+	etag?:String
 }
 
 export interface CollectionResultResult {
-	results: {[index: number]: any};
+	results:{[index:number]:any};
 }
 
 /**
@@ -61,7 +61,7 @@ export class CollectionResult {
 	 * @returns {{d: any}}
 	 **/
 	getRequestResult():any {
-		var retValue:{d: any} = {d: {}};
+		var retValue:{d:any} = {d: {}};
 		if (this.nextLink) {
 			retValue.d['@odata.netxtLink'] = this.nextLink;
 		}
@@ -72,18 +72,85 @@ export class CollectionResult {
 		retValue.d.results = [];
 		this.data.forEach(function (obj, idx) {
 			var tmpObj = obj.toJSON();
-			for(var prop in tmpObj) {
+			for (var prop in tmpObj) {
 				// convert dates into OData date format
-				if(tmpObj[prop] instanceof Date) {
+				if (tmpObj[prop] instanceof Date) {
 					tmpObj[prop] = "/Date(" + tmpObj[prop].getTime() + ")/"
+				} else {
+					this.handleDateExpandedProperties(tmpObj[prop]);
 				}
 			}
 
 			tmpObj.__metadata = obj.__data.__metadata;
+
+			//Loop responsible to add metadata section in all expanded properties
+			for (var expanded in tmpObj) {
+				if (tmpObj[expanded] instanceof Object || tmpObj[expanded] instanceof Array) {
+					this.handleMetadataInExpanded(obj.__data[expanded].__data, tmpObj[expanded]);
+				}
+			}
 			retValue.d.results.push(tmpObj)
-		});
+		}.bind(this));
 
 		return retValue;
+	};
+
+	/**
+	 * This method is a workaround to show __metadata properties
+	 * By default the method .toJSON() exclude all properties starting with "__"
+	 * This routine receives the JSON converted and the object before conversion to move the
+	 * __metadata properties
+	 *
+	 * The method is recursive to ensure that deep expanded properties will be covered
+	 *
+	 * @param oOriginalData     Original data before toJSON() conversion
+	 * @param oExpanded         Object after conversion toJSON()
+	 */
+	private handleMetadataInExpanded(oOriginalData:any, oExpanded:any):void {
+		for (var property in oOriginalData) {
+			if (property === "__metadata") {
+				oExpanded.__metadata = oOriginalData[property];
+			} else {
+				if (!(oOriginalData[property] instanceof Date)) {
+					if (oOriginalData[property] instanceof Object || oOriginalData[property] instanceof Array) {
+						this.handleMetadataInExpanded(oOriginalData[property].__data, oExpanded[property]);
+					}
+				}
+			}
+		}
+	};
+
+	/**
+	 * This method is responsible to check recursively if have any Date property in a
+	 * expanded entity (or deep)
+	 * @param oExpanded     Expandend object
+	 */
+	private handleDateExpandedProperties(oExpanded:any):void {
+		if (oExpanded instanceof Array) {
+			for (var expanded in oExpanded) {
+				for (var property in oExpanded[expanded]) {
+					if (oExpanded[expanded][property] instanceof Date) {
+						oExpanded[expanded][property] = "/Date(" + oExpanded[expanded][property].getTime() + ")/";
+					} else {
+						if (oExpanded[expanded][property] instanceof Array || oExpanded[expanded][property] instanceof Object) {
+							this.handleDateExpandedProperties(oExpanded[expanded][property]);
+						}
+					}
+				}
+			}
+		} else if (oExpanded instanceof Object) {
+			for (var property in oExpanded) {
+				if (oExpanded[property] instanceof Date) {
+					oExpanded[property] = "/Date(" + oExpanded[property].getTime() + ")/";
+				}
+				else {
+					if (oExpanded[property] instanceof Array || oExpanded[property] instanceof Object) {
+						this.handleDateExpandedProperties(oExpanded[property]);
+					}
+				}
+
+			}
+		}
 	};
 }
 
@@ -111,7 +178,7 @@ export class ServiceDocumentResult {
 	 * @returns {{d: any}}
 	 **/
 	getRequestResult():any {
-		var retValue:{d: any} = {d: {}};
+		var retValue:{d:any} = {d: {}};
 		retValue.d.EntitySets = this.data;
 
 		return retValue;
@@ -133,7 +200,7 @@ export class ODataGetBase extends BaseRequestHandler.BaseRequestHandler {
 	_getCollectionData(req, res) {
 		return new Promise((resolve, reject) => {
 			//DONE: The odata.nextLink annotation MUST be included in a response that represents a partial result. "@odata.nextLink": "...?$skiptoken=342r89"
-			commons.getRequestModelClass(req.app.models, req.params[0]).then((function (oResult:RequestModelClass) {
+			commons.getRequestModelClass(req.app.models as Function, req.params[0] as string).then((function (oResult:RequestModelClass) {
 				var ModelClass = oResult.modelClass;
 				try {
 					if (ModelClass) {
@@ -149,8 +216,8 @@ export class ODataGetBase extends BaseRequestHandler.BaseRequestHandler {
 						var filter:LoopbackFilter = {};
 						//TODO: apply $filter parameter
 						filter = _applyFilter.call(this, req, filter);
-						if(oResult.foreignKeyFilter) {
-							if(!filter.where) {
+						if (oResult.foreignKeyFilter) {
+							if (!filter.where) {
 								filter.where = oResult.foreignKeyFilter;
 							} else {
 								filter.where = {"and": [filter.where, oResult.foreignKeyFilter]};
@@ -184,15 +251,15 @@ export class ODataGetBase extends BaseRequestHandler.BaseRequestHandler {
 							// adjust the number of records that are returned according to the maxpagesize setting, either by client
 							// or by the server application
 							if (!filter.limit || filter.limit > this.oDataServerConfig.maxpagesize || (_maxpagesize && filter.limit > _maxpagesize)) {
-								var tmpMaxSize = this.oDataServerConfig.maxpagesize;
-								if (_maxpagesize && tmpMaxSize && parseInt(_maxpagesize) < parseInt(tmpMaxSize)) {
-									tmpMaxSize = _maxpagesize;
+								let effectiveMaxSize = this.oDataServerConfig.maxpagesize;
+								if (_maxpagesize && effectiveMaxSize && parseInt(_maxpagesize) < parseInt(effectiveMaxSize)) {
+									effectiveMaxSize = _maxpagesize;
 								}
 								// if limit has not been set yet we have to add a nextLink property to the response to enable the user to automatically
 								// page to the next chunk of data
 								if (!filter.limit) {
 									var _skiptoken:number = req.query.$skiptoken;
-									_skiptoken = (!isNaN(_skiptoken) ? _skiptoken + parseInt(tmpMaxSize) : parseInt(tmpMaxSize));
+									_skiptoken = (!isNaN(_skiptoken) ? _skiptoken + parseInt(effectiveMaxSize) : parseInt(effectiveMaxSize));
 									nextLink = commons.getBaseURL(req) + '/' + commons.getPluralForModel(ModelClass) + '?$skiptoken=' + _skiptoken;
 									// if nextLink is set, means we deliver partially response, we need to know if there would be more data
 									// if the nextLink is processed. If the current data chunk is the last one we MUST NOT set the nextLink into
@@ -211,8 +278,8 @@ export class ODataGetBase extends BaseRequestHandler.BaseRequestHandler {
 									}
 
 									// set the filter limit to the calculated maxSize
-									filter.limit = tmpMaxSize;
-									res.set('Preference-Applied', 'odata.maxpagesize=' + tmpMaxSize);
+									filter.limit = effectiveMaxSize;
+									res.set('Preference-Applied', 'odata.maxpagesize=' + effectiveMaxSize);
 								}
 							}
 
@@ -248,8 +315,13 @@ export class ODataGetBase extends BaseRequestHandler.BaseRequestHandler {
 											break;
 									}
 									// add deferred relations
-									for(var rel in ModelClass.relations) {
+									for (var rel in ModelClass.relations) {
 										this._createDeferredObject(object, rel, req, ModelClass, object.getId());
+									}
+
+									//create metadata for expanded
+									for (var rel in ModelClass.relations) {
+										this._createMetadataForExpanded(object, rel, req, ModelClass.relations[rel].modelTo, object.getId(), data);
 									}
 								}).bind(this));
 								// add retrieved data from backend / db to the result
@@ -320,8 +392,8 @@ export class ODataGetBase extends BaseRequestHandler.BaseRequestHandler {
 					let ModelClass = oResult.modelClass;
 					if (ModelClass) {
 						if (req.accepts("text/plain")) {
-							ModelClass.count(oResult.foreignKeyFilter, function(err, count) {
-								if(!err) {
+							ModelClass.count(oResult.foreignKeyFilter, function (err, count) {
+								if (!err) {
 									resolve(count);
 								} else {
 									reject(err);
@@ -341,7 +413,6 @@ export class ODataGetBase extends BaseRequestHandler.BaseRequestHandler {
 	};
 
 
-
 	/**
 	 * Get the data for exactly one object of an entity type
 	 * @param req
@@ -355,7 +426,7 @@ export class ODataGetBase extends BaseRequestHandler.BaseRequestHandler {
 			commons.getRequestModelClass(req.app.models, req.params[0]).then(((oResult:RequestModelClass) => {
 				let ModelClass = oResult.modelClass;
 				let id;
-				if(oResult.foreignKeyFilter) {
+				if (oResult.foreignKeyFilter) {
 					id = oResult.foreignKeyFilter[Object.keys(oResult.foreignKeyFilter)[0]];
 				} else {
 					id = oResult.requestId;
@@ -367,23 +438,23 @@ export class ODataGetBase extends BaseRequestHandler.BaseRequestHandler {
 					filter = _applyExpand.call(this, req, filter);
 
 
-					_findInstanceByIdOrForeignkey.call(this, ModelClass, id, filter, oResult).then( ((instance) => {
-					//ModelClass.findById(id, filter).then( ((instance) => {
+					_findInstanceByIdOrForeignkey.call(this, ModelClass, id, filter, oResult).then(((instance) => {
+						//ModelClass.findById(id, filter).then( ((instance) => {
 						if (instance && instance[0]) {
 							// if instance is an array it was searched via the foreignKey. Cause we expect a single instance
 							// we can work with we reject the promise in case we get more than one instance objects
-							if(instance.length > 1 ) {
+							if (instance.length > 1) {
 								reject("It was expected to find a single instance but the resultset contains " + instance.length + " objects");
 							} else {
 								instance = instance[0];
 							}
 
 							// Handling $links
-							if(arrParamToken[1] === "$links") {
+							if (arrParamToken[1] === "$links") {
 								var result:EntityResult = new EntityResult();
 								// retrieve the relations from the ModelClass instance
-								instance[arrParamToken[2]]( (err, res) => {
-									if(err){
+								instance[arrParamToken[2]]((err, res) => {
+									if (err) {
 										console.error(err);
 										reject(500);
 									} else {
@@ -401,12 +472,17 @@ export class ODataGetBase extends BaseRequestHandler.BaseRequestHandler {
 
 							} else {
 								// add deferred relations
-								for(var rel in ModelClass.relations) {
+								for (var rel in ModelClass.relations) {
 									this._createDeferredObject(instance, rel, req, ModelClass, id);
 								}
 								// Handling regular Entity requests
 								var result:EntityResult = new EntityResult();
 								result.data = instance.toJSON();
+
+								//create metadata for expanded
+								for (var rel in ModelClass.relations) {
+									this._createMetadataForExpanded(instance, rel, req, ModelClass.relations[rel].modelTo, id, result.data);
+								}
 
 								//add metadata
 								let propertyType:String = commons.convertType(ModelClass.definition._ids[0].property)
@@ -414,10 +490,10 @@ export class ODataGetBase extends BaseRequestHandler.BaseRequestHandler {
 								switch (propertyType) {
 									case "Edm.Decimal":
 									case "Edm.Int32":
-										sKey =  commons.getBaseURL(req) + '/' + commons.getPluralForModel(ModelClass) + '(' + id + ')';
+										sKey = commons.getBaseURL(req) + '/' + commons.getPluralForModel(ModelClass) + '(' + id + ')';
 										break;
 									default:
-										sKey=  commons.getBaseURL(req) + '/' + commons.getPluralForModel(ModelClass) + '(\'' + id + '\')';
+										sKey = commons.getBaseURL(req) + '/' + commons.getPluralForModel(ModelClass) + '(\'' + id + '\')';
 										break;
 								}
 
@@ -444,6 +520,214 @@ export class ODataGetBase extends BaseRequestHandler.BaseRequestHandler {
 		});
 	}
 
+	/**
+	 * Helper method for generating a metadata in deferred entry
+	 *
+	 * This method is responsible to apply metadata section for all expanded properties recursively
+	 * The basic flow is:
+	 * 1) Check if is a collection or an single entity request
+	 * 2) Loop at all properties searching for expand navigation properties
+	 * 3) Add the metadata section for the navigation property found in step 2
+	 * 4) Check if have more navigation properties inside the the navigation property found in step 2
+	 * 5) If it haves, call this method again recursively updating the data to the deep navigation
+	 *
+	 * @param instance      Relation's target model instance
+	 * @param rel           Relation's target name
+	 * @param req           Requisition object
+	 * @param ModelClass    Class model of original model (not expanded)
+	 * @param id            ObjectID of relation's target model
+	 * @param expandedData  Relation's target data object
+	 * @private
+	 */
+	_createMetadataForExpanded = function (instance, rel, req, ModelClass, id, expandedData) {
+		//check if the expanded data is a collection
+		if (expandedData instanceof Array) {
+			if (expandedData.length === 0) { //if we have expanded data empty, no metadata is needed
+				return;
+			} else {
+				/*
+				 This section will loop in all individual result in expanded data and check the key type
+				 to create the entity metadata.
+				 After the metadata create, it's necessary loop in all properties to check others expanded attributes
+				 */
+				for (var i in expandedData) {
+					let oItem = expandedData[i].__data;
+
+					//deferred properties don't have metadata section
+					if (typeof oItem[rel] === "undefined") continue;
+					if (oItem[rel].__deferred) continue;
+
+					//individual result metadata (key type check to insert 'key' or not.
+					var propertyType = commons.convertType(ModelClass.definition._ids[0].property);
+					switch (propertyType) {
+						case "Edm.Decimal":
+						case "Edm.Int32":
+							if (oItem[rel].__data instanceof Array) {
+								//if we have a collection, insert just one entity
+								oItem[rel].__data.map(function (oData) {
+									oData.__data.__metadata = {
+										uri: commons.getBaseURL(req) + '/' + commons.getPluralForModel(ModelClass) + '(' + oData.id + ')',
+										type: constants.ODATA_NAMESPACE + '.' + ModelClass.definition.name
+									};
+									return oData;
+								});
+							} else {
+								//check if we don't have a empty result or undefined ObjectID
+								if (typeof oItem[rel].__data !== "undefined" && typeof oItem[rel].__data.id !== "undefined") {
+									//using map to insert in all items
+									oItem[rel].__data.__metadata = {
+										uri: commons.getBaseURL(req) + '/' + commons.getPluralForModel(ModelClass) + '(' + oItem[rel].__data.id + ')',
+										type: constants.ODATA_NAMESPACE + '.' + ModelClass.definition.name
+									};
+								}
+							}
+							break;
+						default:
+							if (oItem[rel].__data instanceof Array) {
+								//if we have a collection, insert just one entity
+								oItem[rel].__data.map(function (oData) {
+									oData.__data.__metadata = {
+										uri: commons.getBaseURL(req) + '/' + commons.getPluralForModel(ModelClass) + '(\'' + oData.id + '\')',
+										type: constants.ODATA_NAMESPACE + '.' + ModelClass.definition.name
+									};
+									return oData;
+								});
+							} else {
+								//check if we don't have a empty result or undefined ObjectID
+								if (typeof oItem[rel].__data !== "undefined" && typeof oItem[rel].__data.id !== "undefined") {
+									//using map to insert in all items
+									oItem[rel].__data.__metadata = {
+										uri: commons.getBaseURL(req) + '/' + commons.getPluralForModel(ModelClass) + '(\'' + oItem[rel].__data.id + '\')',
+										type: constants.ODATA_NAMESPACE + '.' + ModelClass.definition.name
+									};
+								}
+							}
+							break;
+					}
+					/*
+					 This part is a recursion responsible to process all other expands possible in properties
+					 It's loop in all properties searching for other expands that are Objects or Arrays
+					 */
+					for (var sProp in oItem[rel].__data) {
+						//no metadata and deffered needs to be processed
+						if (sProp === "__metadata" || sProp === "__deferred") continue;
+
+						let oPropValue:any = oItem[rel].__data[sProp];
+
+						//checking if the property is another expand property (collection or single entry)
+						if (oPropValue instanceof Object && !(oPropValue instanceof Date )) {
+							//if is a single entry, call recursively
+							this._createMetadataForExpanded(oItem[rel].__data, sProp, req, ModelClass.relations[sProp].modelTo, oPropValue.__data.id, oPropValue.__data);
+						} else if (oPropValue instanceof Array) {
+							for (var iExpandedItem in oPropValue.__data) {
+								//if is a collection, call recursively for each collection member
+								this._createMetadataForExpanded(oItem[rel].__data, sProp, req, ModelClass.relations[sProp].modelTo, oPropValue.__data[iExpandedItem].id, oPropValue.__data[iExpandedItem]);
+							}
+						}
+					}
+				}
+
+			}
+
+		} else { // if is not a collection, it's a single entity (logic based on array)
+			let oModelData:any;
+
+			if (typeof expandedData[rel] === "undefined") {
+				oModelData = expandedData;
+			} else {
+				oModelData = expandedData[rel];
+			}
+
+			if (oModelData.__deferred) { //deferred don't needs metadata
+				return;
+			}
+			/*
+			 This part is a recursion responsible to process all other expands possible in properties
+			 It's loop in all properties searching for other expands that are Objects or Arrays
+			 */
+			if (oModelData instanceof Array) {
+				//If it's an Array, the metadata needs to be inside each one
+				for (var i in oModelData) {
+					//TODO: Modularize the metadata key creation process in commons library
+					var propertyType = commons.convertType(ModelClass.definition._ids[0].property);
+					switch (propertyType) {
+						case "Edm.Decimal":
+						case "Edm.Int32":
+							oModelData[i].__metadata = {
+								uri: commons.getBaseURL(req) + '/' + commons.getPluralForModel(ModelClass) + '(' + oModelData[i].id + ')',
+								type: constants.ODATA_NAMESPACE + '.' + ModelClass.definition.name
+							};
+							break;
+						default:
+							oModelData[i].__metadata = {
+								uri: commons.getBaseURL(req) + '/' + commons.getPluralForModel(ModelClass) + '(\'' + oModelData[i].id + '\')',
+								type: constants.ODATA_NAMESPACE + '.' + ModelClass.definition.name
+							};
+							break;
+					}
+
+					var oData = oModelData[i];
+
+					for (var sProp in oData) {
+						//no metadata and deffered needs to be processed
+						if (sProp === "__metadata" || sProp === "__deferred") continue;
+
+						let oPropValue:any = oData[sProp];
+
+						//checking if the property is another expand property (collection or single entry)
+						if (oPropValue instanceof Object && !(oPropValue instanceof Date )) {
+							//if is a single entry, call recursively
+							this._createMetadataForExpanded(oData, sProp, req, ModelClass.relations[sProp].modelTo, oPropValue.id, oPropValue);
+						} else if (oPropValue instanceof Array) {
+							//if is a collection, call recursively for each collection member
+							for (var iExpandedItem in oPropValue) {
+								this._createMetadataForExpanded(oData, rel, req, ModelClass, id, oPropValue[iExpandedItem]);
+							}
+						}
+					}
+				}
+			} else if (oModelData instanceof Object) {
+				//if it's a single entry, metadata needs to be at the end
+				//TODO: Modularize the metadata key creation process in commons library
+				var propertyType = commons.convertType(ModelClass.definition._ids[0].property);
+				switch (propertyType) {
+					case "Edm.Decimal":
+					case "Edm.Int32":
+						oModelData.__metadata = {
+							uri: commons.getBaseURL(req) + '/' + commons.getPluralForModel(ModelClass) + '(' + oModelData.id + ')',
+							type: constants.ODATA_NAMESPACE + '.' + ModelClass.definition.name
+						};
+						break;
+					default:
+						oModelData.__metadata = {
+							uri: commons.getBaseURL(req) + '/' + commons.getPluralForModel(ModelClass) + '(\'' + oModelData.id + '\')',
+							type: constants.ODATA_NAMESPACE + '.' + ModelClass.definition.name
+						};
+						break;
+				}
+
+				for (var sProp in oModelData) {
+					//no metadata and deffered needs to be processed
+					if (sProp === "__metadata" || sProp === "__deferred") continue;
+
+					let oPropValue:any = oModelData[sProp];
+
+					//checking if the property is another expand property (collection or single entry)
+					if (oPropValue instanceof Object && !(oPropValue instanceof Date )) {
+						//if is a single entry, call recursively
+						this._createMetadataForExpanded(oModelData, sProp, req, ModelClass.relations[sProp].modelTo, oPropValue.id, oPropValue);
+					} else if (oPropValue instanceof Array) {
+						//if is a collection, call recursively for each collection member
+						for (var iExpandedItem in oPropValue) {
+							this._createMetadataForExpanded(oModelData, rel, req, ModelClass, id, oPropValue[iExpandedItem]);
+						}
+					}
+				}
+			}
+
+
+		}
+	};
 
 	/**
 	 * Helper method for generating a deferred entry
@@ -454,7 +738,7 @@ export class ODataGetBase extends BaseRequestHandler.BaseRequestHandler {
 	 * @param id
 	 * @private
 	 */
-	_createDeferredObject(instance:{__data: any}, rel:string, req:any, ModelClass:any, id:any) {
+	_createDeferredObject(instance:{__data:any}, rel:string, req:any, ModelClass:any, id:any) {
 		if (!instance.__data[rel]) {
 			var propertyType = commons.convertType(ModelClass.definition._ids[0].property);
 			switch (propertyType) {
@@ -517,14 +801,14 @@ export class ODataGetBase extends BaseRequestHandler.BaseRequestHandler {
  * @returns {Promise}
  * @private
  */
-function _findInstanceByIdOrForeignkey(ModelClass: LoopbackModelClass, id:any, filter: LoopbackFilter, oReqQueryObject: RequestModelClass) {
+function _findInstanceByIdOrForeignkey(ModelClass:LoopbackModelClass, id:any, filter:LoopbackFilter, oReqQueryObject:RequestModelClass) {
 	return new Promise((resolve, reject) => {
-		if(oReqQueryObject.foreignKeyFilter) {
-			ModelClass.find({where: oReqQueryObject.foreignKeyFilter}).then( ((instances) => {
+		if (oReqQueryObject.foreignKeyFilter) {
+			ModelClass.find({where: oReqQueryObject.foreignKeyFilter}).then(((instances) => {
 				resolve(instances);
 			}));
 		} else {
-			ModelClass.findById(id, filter).then( ((instance) => {
+			ModelClass.findById(id, filter).then(((instance) => {
 				resolve([instance]);
 			}));
 		}
@@ -595,8 +879,8 @@ function _applyExpand(req, filter?:LoopbackFilter) {
 			throw new Error(ast.error);
 		}
 		filter.include = [];
-		ast.$expand.forEach(function(obj) {
-			if(obj.indexOf('/') > -1) {
+		ast.$expand.forEach(function (obj) {
+			if (obj.indexOf('/') > -1) {
 				var objArr = obj.split('/');
 				var incl = {};
 				incl[objArr[0]] = objArr[1]
@@ -626,7 +910,7 @@ function _applyOrderBy(req, filter?:LoopbackFilter) {
 			throw new Error(ast.error);
 		}
 		filter.order = [];
-		ast.$orderby.forEach(function(obj) {
+		ast.$orderby.forEach(function (obj) {
 
 			//// does not work at the moment: ODataParser seems to have a problem here
 			//if(obj.indexOf('/') > -1) {
@@ -635,7 +919,7 @@ function _applyOrderBy(req, filter?:LoopbackFilter) {
 			//	incl[objArr[0]] = objArr[1]
 			//	filter.order.push(incl);
 			//} else {
-			for(var prop in obj) {
+			for (var prop in obj) {
 				var str:string = prop;
 				str += " " + obj[prop].toUpperCase();
 				filter.order.push(str);
@@ -769,8 +1053,8 @@ function _convertAstToRegexp(ast:any):any {
 	// if functioncall is made in a form like $filter=startswith(ContactTitle, 'Order') there is no left and no
 	// right side. We push the whole ast to the left side so that we can treat both cased in the same way.
 	// This is a trick but it works.
-	var bAddedLeft: boolean = false;
-	if(ast.left === undefined) {
+	var bAddedLeft:boolean = false;
+	if (ast.left === undefined) {
 		ast.left = ast;
 		bAddedLeft = true;
 	}
@@ -908,7 +1192,7 @@ function _convertAstToRegexp(ast:any):any {
 	}
 
 	// delete the left property if it was inserted at the top of this function
-	if(bAddedLeft) {
+	if (bAddedLeft) {
 		delete ast.left;
 	}
 
