@@ -4,6 +4,7 @@ var chaiAsPromised = require("chai-as-promised");
 var odata_get_1 = require("../../../lib/base/get/odata_get");
 var proxyquire = require("proxyquire");
 var sinon = require("sinon");
+var loopback = require("loopback");
 describe("ODataGetBase", function () {
     var odataConfig;
     before(function () {
@@ -71,7 +72,11 @@ describe("ODataGetBase", function () {
                 getPluralForModel: function (ModelClass) { return "Customers"; }
             };
             var requestheaderStub = {
-                getPreferHeader: function (req) { return []; }
+                getPreferHeader: function (req) {
+                    return [
+                        { 0: "maxpagesize", 1: 50 }
+                    ];
+                }
             };
             var sutProxy = proxyquire("../../../lib/base/get/odata_get", {
                 '../../common/odata_common': commonsStub,
@@ -87,7 +92,60 @@ describe("ODataGetBase", function () {
             return Promise.all([
                 promise.should.eventually.have.property('data'),
                 promise.should.eventually.have.property('nextLink'),
-                promise.should.eventually.have.property('nextLink').equals("http://localhost:3000/Customers?$skiptoken=200")
+                promise.should.eventually.have.property('nextLink').equals("http://localhost:3000/Customers?$skiptoken=50")
+            ]);
+        });
+        it("should return a unfiltered result set", function () {
+            var oModel = loopback.createModel('my-model', { name: String });
+            var dataSource = loopback.createDataSource({
+                connector: loopback.Memory
+            });
+            oModel.attachTo(dataSource);
+            var req = {
+                url: "http://localhost:3000/Customer?$orderby=quantity",
+                app: {
+                    models: function () { }
+                },
+                params: [
+                    "one"
+                ],
+                query: {}
+            };
+            var res = {
+                status: 0,
+                set: function (key, value) { }
+            };
+            var resSpy = sinon.spy(res, 'set');
+            var commonsStub = {
+                getRequestModelClass: function (models, param) {
+                    return Promise.resolve({
+                        modelClass: oModel
+                    });
+                },
+                getBaseURL: function (req) { return "http://localhost:3000"; },
+                getPluralForModel: function (ModelClass) { return "Customers"; }
+            };
+            var requestheaderStub = {
+                getPreferHeader: function (req) {
+                    return [
+                        { 0: "maxpagesize", 1: 50 }
+                    ];
+                }
+            };
+            var sutProxy = proxyquire("../../../lib/base/get/odata_get", {
+                '../../common/odata_common': commonsStub,
+                '../../common/odata_req_header': requestheaderStub
+            });
+            sut = new sutProxy.ODataGetBase();
+            sut.setConfig(odataConfig);
+            var promise = sut._getCollectionData(req, res);
+            var expectedResult = {
+                data: [],
+                nextLink: "http://localhost:3000/Customers?$skiptoken=200"
+            };
+            return Promise.all([
+                promise.should.eventually.have.property('data'),
+                promise.should.eventually.have.property('data').to.have.lengthOf(0)
             ]);
         });
     });

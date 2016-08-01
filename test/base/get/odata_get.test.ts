@@ -1,23 +1,19 @@
 /// <reference path="../../../typings/index.d.ts" />
 /// <reference path="../../../lib/types/n_odata_types.ts" />
+/// <reference path="../../../lib/typings/bypass_typings.d.ts" />
 
 //import expect = require("chai").expect;
 import chai = require("chai");
-import {expect} from "chai";
-import {assert} from "chai";
 import chaiAsPromised = require("chai-as-promised");
 import lb_constants = require("../../lib/constants/loopback_constants");
 import {LoopbackRelationDefinition} from "../../lib/types/loopbacktypes";
 import {ODataGetBase} from "../../../lib/base/get/odata_get";
-import {Request} from "express-serve-static-core";
-import {Response} from "express-serve-static-core";
 import proxyquire = require("proxyquire");
 import {ODataServerConfig} from "../../../lib/types/n_odata_types";
 import {SinonSpy} from "sinon";
 import * as sinon from "sinon";
 import sinonChai = require("~sinon-chai/index");
-import {RequestModelClass} from "../../../lib/types/n_odata_types";
-import {LoopbackModelClass} from "../../../lib/types/loopbacktypes";
+import loopback = require("loopback");
 
 /* see here for a good description of chai-as-promised: http://www.sitepoint.com/promises-in-javascript-unit-tests-the-definitive-guide/ */
 
@@ -106,7 +102,9 @@ describe("ODataGetBase", function() {
 			};
 
 			let requestheaderStub:any = {	// stubbing requestHeader
-				getPreferHeader: (req) => {return []}
+				getPreferHeader: (req) => {return [
+					{	0: "maxpagesize", 1: 50 }
+				]}
 			};
 			// create the proxyquire proxy for sut module with the injected module stubs
 			let sutProxy = proxyquire("../../../lib/base/get/odata_get", {
@@ -128,8 +126,71 @@ describe("ODataGetBase", function() {
 			return Promise.all([
 					promise.should.eventually.have.property('data'),
 					promise.should.eventually.have.property('nextLink'),
-					promise.should.eventually.have.property('nextLink').equals("http://localhost:3000/Customers?$skiptoken=200")
+					promise.should.eventually.have.property('nextLink').equals("http://localhost:3000/Customers?$skiptoken=50")
 				]);
+		});
+
+		it("should return a unfiltered result set", () => {
+			let oModel:any = loopback.createModel('my-model', {name: String});
+			var dataSource = loopback.createDataSource({
+				connector: loopback.Memory
+			} as any);
+			oModel.attachTo(dataSource);
+
+			let req:any = {
+				url: "http://localhost:3000/Customer?$orderby=quantity",
+				app: {
+					models: () => {}
+				},
+				params: [
+					"one"
+				],
+				query: {}
+			};
+			let res:any = {
+				status: 0,
+				set: (key:string, value:string) => {}
+			};
+
+			// spy the res.set method
+			let resSpy:SinonSpy = sinon.spy(res, 'set');
+
+			let commonsStub:any = {		// stubbing odata_common.ts
+				getRequestModelClass: (models, param) => {
+					return Promise.resolve({
+						modelClass: oModel
+					});
+				},
+				getBaseURL: (req) => {return "http://localhost:3000"},
+				getPluralForModel: (ModelClass) => {return "Customers"}
+			};
+
+			let requestheaderStub:any = {	// stubbing requestHeader
+				getPreferHeader: (req) => {return [
+					{	0: "maxpagesize", 1: 50 }
+				]}
+			};
+			// create the proxyquire proxy for sut module with the injected module stubs
+			let sutProxy = proxyquire("../../../lib/base/get/odata_get", {
+				'../../common/odata_common': commonsStub,
+				'../../common/odata_req_header': requestheaderStub
+			});
+
+			// create sut (subject under test)
+			sut = new sutProxy.ODataGetBase();
+			sut.setConfig(odataConfig);
+			// invoke method to test
+			let promise = sut._getCollectionData(req, res);
+			// check assertions
+			//resSpy.should.eventually.have.been.calledOnce;
+			let expectedResult = {
+				data: [],
+				nextLink: "http://localhost:3000/Customers?$skiptoken=200"
+			};
+			return Promise.all([
+				promise.should.eventually.have.property('data'),
+				promise.should.eventually.have.property('data').to.have.lengthOf(0)
+			]);
 		});
 
 	});
