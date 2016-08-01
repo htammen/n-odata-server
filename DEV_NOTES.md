@@ -42,3 +42,21 @@ execute the following steps.
 * run `tsc -w` to start the TypeScript watch task that automatically transpiles TypeScripts *.ts files into *.js files in the background.
 
 Many IDE support TypeScript. You can of cause also use the functionality of your IDE to transpile you ts files.
+
+## Create Release Notes
+The release notes are created from Github issues using a ruby tool called [github-changelog-generator](https://github.com/skywinder/github-changelog-generator)
+This tool has to be installed locally (see project docu). Additionally a github token should be generated and set as environment variable *CHANGELOG_GITHUB_TOKEN*,
+e.g. with `export CHANGELOG_GITHUB_TOKEN="«your-40-digit-github-token»"`
+
+*There is also a quite promising [node project](https://github.com/conventional-changelog/conventional-changelog-cli) that needs a more configuration.
+Maybe we'll choose that in the future*
+
+### Release Notes creation process
+To create the release notes follow these steps. You can run the steps several times without any problem.
+
+- cd into the project directory
+- open file `.github_changelog_generator`
+- adjust the parameter `future-release` to the new release number
+- run the command `npm run relnotes`
+- commit the created `CHANGELOG.md` file
+
