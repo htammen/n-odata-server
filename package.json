@@ -1,13 +1,14 @@
 {
   "name": "n-odata-server",
-  "version": "0.3.13",
+  "version": "0.3.14",
   "description": "OData server for loopback framework",
   "main": "index.js",
   "scripts": {
     "_pretest": "jshint .",
     "test": "istanbul test mocha -- --recursive",
     "coverage": "istanbul cover _mocha -- --recursive",
-    "updproject": "node ./scripts/update_project.js"
+    "updproject": "node ./scripts/update_project.js",
+    "relnotes": "github_changelog_generator -u htammen -p n-odata-server"
   },
   "dependencies": {
     "log4js": "^0.6.31",
