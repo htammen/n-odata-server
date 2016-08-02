@@ -229,7 +229,8 @@ export class ODataGetBase extends BaseRequestHandler.BaseRequestHandler {
 						// after filter and search has been applied
 						if (req.query.$count !== undefined) {
 							if (req.accepts("text/plain")) {
-								ModelClass.count(filter, function (err, count) {
+								let oCountFilter:any = filter.where;
+								ModelClass.count(oCountFilter, function (err, count) {
 									res.set('Content-Type', 'text/plain');
 									res.send(count.toString());
 								})
@@ -392,7 +393,20 @@ export class ODataGetBase extends BaseRequestHandler.BaseRequestHandler {
 					let ModelClass = oResult.modelClass;
 					if (ModelClass) {
 						if (req.accepts("text/plain")) {
-							ModelClass.count(oResult.foreignKeyFilter, function (err, count) {
+							var filter:any = {}; //LoopbackFilter.where
+							//TODO: apply $filter parameter
+							filter = _applyFilter.call(this, req, filter);
+							if(oResult.foreignKeyFilter) {
+								if(!filter) {
+									filter = oResult.foreignKeyFilter;
+								} else {
+									filter = { "and" : [filter.where, oResult.foreignKeyFilter]};
+								}
+							}else{
+								filter = filter.where;
+							}
+
+							ModelClass.count(filter, function(err, count) {
 								if (!err) {
 									resolve(count);
 								} else {
