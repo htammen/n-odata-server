@@ -45,37 +45,86 @@ fs.stat('n_odata_server_log.json', function (err, stat) {
 var logger = log4js.getLogger("odata");
 
 /**
- * This is the main entry class for the n-odata-server
+ * This is the main entry class for the n-odata-server. There is only one instance of
+ * this class. It implements the singleton pattern
  */
-class OData {
-	private oDataServerConfig:ODataServerConfig;
+export class OData {
+	private static singletonInstance: OData;
+
+	private _oDataServerConfig:ODataServerConfig;
 	private oDataGet: GetRequestHandler;
 	private oDataPost: PostRequestHandler;
 	private oDataDelete: DeleteRequestHandler;
 	private oDataPut: PutRequestHandler;
 
+	/* private variable that holds the status of initialization */
+	private initProceeded: boolean = false;
+
+	constructor() {
+		if(!OData.singletonInstance) {
+			OData.singletonInstance = this;
+		}
+		return OData.singletonInstance;
+	}
+
+	/**
+	 * Getter for oDataServerConfig
+	 * @returns {ODataServerConfig}
+	 */
+	public getODataServerConfig():ODataServerConfig {
+		return this._oDataServerConfig;
+	}
+
 	public init(loopbackApplication, options) {
-		// save the options defined in a local variable
-		this.oDataServerConfig = options || {};
-		// if not defined set a default value for server-side paging
-		if (!this.oDataServerConfig.maxpagesize) {
-			this.oDataServerConfig.maxpagesize = constants.ODATA_MAXPAGESIZE;
-		}
+		if(!this.initProceeded) {	// run init only once
+			// save the options defined in a local variable
+			this._oDataServerConfig = this._oDataServerConfig || options || {};
+			// if not defined set a default value for server-side paging
+			if (!this._oDataServerConfig.maxpagesize) {
+				this._oDataServerConfig.maxpagesize = constants.ODATA_MAXPAGESIZE;
+			}
 
-		// retrieve odata prefix from path
-		var _pathArr = options.path.split('/');
-		this.oDataServerConfig.odataPrefix = _pathArr[1];
+			// retrieve odata prefix from path
+			let _pathArr = (options && options.path && options.path.split('/'));
+			if (_pathArr) {
+				this._oDataServerConfig.odataPrefix = _pathArr[1];
+			}
 
-		if (!this.oDataServerConfig.odataversion) {
-			this.oDataServerConfig.odataversion = "4";
-		}
+			if (!this._oDataServerConfig.odataversion) {
+				this._oDataServerConfig.odataversion = "4";
+			}
+			common.setConfig(this._oDataServerConfig);
 
-		if (this.oDataServerConfig.odataversion === "4") {
-			this._handleODataVersion4(loopbackApplication, options, this.oDataServerConfig);
-		} else if (this.oDataServerConfig.odataversion === "2") {
-			this._handleODataVersion2(loopbackApplication, options, this.oDataServerConfig);
-		} else {
-			console.log("odata version " + this.oDataServerConfig.odataversion + " not supported yet");
+			if (this._oDataServerConfig.odataversion === "4") {
+				this.oDataGet = new ODataGetV4.ODataGet();
+				this.oDataDelete = new ODataDeleteV4.ODataDelete();
+				this.oDataPost = new ODataPostV4.ODataPost();
+				this.oDataPut = new ODataPutV4.ODataPut();
+
+				this.oDataGet.setConfig(this._oDataServerConfig);
+			} else {
+				this.oDataGet = new ODataGetV2.ODataGet();
+				this.oDataPost = new ODataPostV2.ODataPost();
+				this.oDataDelete = new ODataDeleteV2.ODataDelete();
+				this.oDataPut = new ODataPutV2.ODataPut();
+
+				this.oDataGet.setConfig(this._oDataServerConfig);
+			}
+
+			// If using application wants to start odata server not via the recommended
+			// way middleware but via component-config.json we start the server here. Otherwise
+			// we do nothing more here. The server will then be started in /middleware/odata.ts
+			if (!options.useViaMiddleware) {
+				if (this._oDataServerConfig.odataversion === "4") {
+					this._handleODataVersion4(loopbackApplication, options);
+				} else if (this._oDataServerConfig.odataversion === "2") {
+					this._handleODataVersion2(loopbackApplication, options);
+				} else {
+					console.log("odata version " + this._oDataServerConfig.odataversion + " not supported yet");
+				}
+			}
+
+			this.initProceeded = true;	// ensure that init is only run once
 		}
 	};
 
@@ -84,77 +133,12 @@ class OData {
 	 *
 	 * @param loopbackApplication
 	 * @param options
-	 * @param oDataServerConfig
 	 * @private
 	 */
-	private _handleODataVersion2(loopbackApplication, options, oDataServerConfig) {
-		this.oDataGet = new ODataGetV2.ODataGet();
-		this.oDataPost = new ODataPostV2.ODataPost();
-		this.oDataDelete = new ODataDeleteV2.ODataDelete();
-		this.oDataPut = new ODataPutV2.ODataPut();
-
-		common.setConfig(oDataServerConfig);
-		this.oDataGet.setConfig(oDataServerConfig);
-
-		loopbackApplication.use(options.path, function (req:express.Request, res:express.Response, next) {
-			try {
-				logger.info("processing OData V2 request of type " + req.method);
-				logger.debug("baseUrl = " + req.baseUrl);
-				switch (req.method) {
-					case 'GET':
-						this._handleGet(req, res);
-						break;
-					case 'POST':
-						var x_http_method:string = req.get('x-http-method');
-						if (x_http_method) {
-							switch (x_http_method) {
-								case 'MERGE':
-									this._handleMerge(req, res);
-									break;
-								case 'PATCH':
-									this._handleMerge(req, res);
-									break;
-								case 'PUT':
-									this._handlePut(req, res);
-									break;
-								case 'DELETE':
-									this._handleDelete(req, res);
-									break;
-
-								default:
-									res.status(500).send("HTTP verb " + x_http_method + " not supported by POST tunneling");
-							}
-						} else {
-							this._handlePost(req, res);
-						}
-						break;
-					// PUT is used to update an entity and to overwrite all property values with its default
-					// values if they are not submitted with the request. In other words it resets an entity and
-					// only sets the submitted properties
-					case 'PUT':
-						this._handlePut(req, res);
-						var i = 2;
-						break;
-					//// PATCH should be the preferred method to update an entity
-					//case 'PATCH':
-					//	_handlePATCH.call(this, req, res);
-					//	break;
-					//// MERGE is used in OData V2.0 to update an entity. This has been changed in
-					//// in V4.0 to PATCH
-					//case 'MERGE':
-					//	_handlePATCH.call(this, req, res);
-					//	break;
-					case 'DELETE':
-						this._handleDelete(req, res);
-						break;
-					default:
-						res.sendStatus(404);
-						break;
-				}
-			} catch (e) {
-				console.log(e);
-				res.sendStatus(500);
-			}
+	private _handleODataVersion2(loopbackApplication, options) {
+		// define the express / loopback route for OData V2
+		loopbackApplication.use(options.path, function(req:express.Request, res:express.Response, next) {
+			this.handleRequestV2(req, res, next)
 		}.bind(this));
 	}
 
@@ -164,75 +148,145 @@ class OData {
 	 *
 	 * @param loopbackApplication
 	 * @param options
-	 * @param oDataServerConfig
 	 * @private
 	 */
-	private _handleODataVersion4(loopbackApplication, options, oDataServerConfig) {
-		this.oDataGet = new ODataGetV4.ODataGet();
-		this.oDataDelete = new ODataDeleteV4.ODataDelete();
-		this.oDataPost = new ODataPostV4.ODataPost();
-		this.oDataPut = new ODataPutV4.ODataPut();
-
-		common.setConfig(oDataServerConfig);
-		this.oDataGet.setConfig(oDataServerConfig);
-
+	private _handleODataVersion4(loopbackApplication, options) {
 		loopbackApplication.use(options.path, function (req:express.Request, res:express.Response, next) {
-			try {
-				switch (req.method) {
-					case 'GET':
-						this._handleGet(req, res);
-						break;
-					case 'POST':
-						var x_http_method:string = req.get('x-http-method');
-						if (x_http_method) {
-							switch (x_http_method) {
-								case 'MERGE':
-									this._handlePatch(req, res);
-									break;
-								case 'PATCH':
-									this._handlePatch(req, res);
-									break;
-								case 'PUT':
-									this._handlePut(req, res);
-									break;
-								case 'DELETE':
-									this._handleDelete(req, res);
-									break;
-
-								default:
-									res.status(500).send("HTTP verb " + x_http_method + " not supported by POST tunneling");
-							}
-						} else {
-							this._handlePost(req, res);
-						}
-						break;
-					// PUT is used to update an entity and to overwrite all property values with its default
-					// values if they are not submitted with the request. In other words it resets an entity and
-					// only sets the submitted properties
-					case 'PUT':
-						this._handlePut(req, res);
-						break;
-					// PATCH should be the preferred method to update an entity
-					case 'PATCH':
-						this._handlePatch(req, res);
-						break;
-					// MERGE is used in OData V2.0 to update an entity. This has been changed in
-					// in V4.0 to PATCH
-					case 'MERGE':
-						this._handlePatch(req, res);
-						break;
-					case 'DELETE':
-						this._handleDelete(req, res);
-						break;
-					default:
-						res.sendStatus(404);
-						break;
-				}
-			} catch (e) {
-				console.log(e);
-				res.sendStatus(500);
-			}
+			this.handleRequestV4(req, res, next);
 		}.bind(this));
+	}
+
+
+	/**
+	 * handle the request that was sent by Express
+	 * @param req HTTP request
+	 * @param res HTTP response
+	 * @param next next phase in phase chain
+	 */
+	public handleRequestV2(req:express.Request, res:express.Response, next) {
+		try {
+			logger.info("processing OData V2 request of type " + req.method);
+			logger.debug("baseUrl = " + req.baseUrl);
+			switch (req.method) {
+				case 'GET':
+					this._handleGet(req, res);
+					break;
+				case 'POST':
+					var x_http_method:string = req.get('x-http-method');
+					if (x_http_method) {
+						switch (x_http_method) {
+							case 'MERGE':
+								this._handleMerge(req, res);
+								break;
+							case 'PATCH':
+								this._handleMerge(req, res);
+								break;
+							case 'PUT':
+								this._handlePut(req, res);
+								break;
+							case 'DELETE':
+								this._handleDelete(req, res);
+								break;
+
+							default:
+								res.status(500).send("HTTP verb " + x_http_method + " not supported by POST tunneling");
+						}
+					} else {
+						this._handlePost(req, res);
+					}
+					break;
+				// PUT is used to update an entity and to overwrite all property values with its default
+				// values if they are not submitted with the request. In other words it resets an entity and
+				// only sets the submitted properties
+				case 'PUT':
+					this._handlePut(req, res);
+					var i = 2;
+					break;
+				//// PATCH should be the preferred method to update an entity
+				//case 'PATCH':
+				//	_handlePATCH.call(this, req, res);
+				//	break;
+				//// MERGE is used in OData V2.0 to update an entity. This has been changed in
+				//// in V4.0 to PATCH
+				//case 'MERGE':
+				//	_handlePATCH.call(this, req, res);
+				//	break;
+				case 'DELETE':
+					this._handleDelete(req, res);
+					break;
+				default:
+					res.sendStatus(404);
+					break;
+			}
+		} catch (e) {
+			console.log(e);
+			res.sendStatus(500);
+		}
+	}
+
+
+	/**
+	 * handle the V4 request that was sent by Express
+	 * @param req HTTP request
+	 * @param res HTTP response
+	 * @param next next phase in phase chain
+	 */
+	public handleRequestV4(req:express.Request, res:express.Response, next) {
+		try {
+			switch (req.method) {
+				case 'GET':
+					this._handleGet(req, res);
+					break;
+				case 'POST':
+					var x_http_method:string = req.get('x-http-method');
+					if (x_http_method) {
+						switch (x_http_method) {
+							case 'MERGE':
+								this._handlePatch(req, res);
+								break;
+							case 'PATCH':
+								this._handlePatch(req, res);
+								break;
+							case 'PUT':
+								this._handlePut(req, res);
+								break;
+							case 'DELETE':
+								this._handleDelete(req, res);
+								break;
+
+							default:
+								res.status(500).send("HTTP verb " + x_http_method + " not supported by POST tunneling");
+						}
+					} else {
+						this._handlePost(req, res);
+					}
+					break;
+				// PUT is used to update an entity and to overwrite all property values with its default
+				// values if they are not submitted with the request. In other words it resets an entity and
+				// only sets the submitted properties
+				case 'PUT':
+					this._handlePut(req, res);
+					break;
+				// PATCH should be the preferred method to update an entity
+				case 'PATCH':
+					this._handlePatch(req, res);
+					break;
+				// MERGE is used in OData V2.0 to update an entity. This has been changed in
+				// in V4.0 to PATCH
+				case 'MERGE':
+					this._handlePatch(req, res);
+					break;
+				case 'DELETE':
+					this._handleDelete(req, res);
+					break;
+				default:
+					res.sendStatus(404);
+					break;
+			}
+		} catch (e) {
+			console.log(e);
+			res.sendStatus(500);
+		}
 	}
 
 	/**
@@ -318,7 +372,7 @@ class OData {
 /**
  * Exposes the main function of the n-odata-server
  */
-export = function(loopbackApplication, options) {
+export function init(loopbackApplication, options) {
 	var oData = new OData();
 	oData.init(loopbackApplication, options)
 };

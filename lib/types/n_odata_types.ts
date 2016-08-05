@@ -15,6 +15,7 @@ export interface ODataServerConfig {
 	maxpagesize?: number;
 	odataversion?: string;
 	odataPrefix: string;
+	useViaMiddleware?: boolean;
 }
 
 

@@ -19,8 +19,8 @@ results.txt
 TECH_NOTES.md
 tsconfig.json
 typings.json
-*.js.map
-*.ts
+#*.js.map
+#*.ts
 *.log
 *.out
 
