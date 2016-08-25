@@ -1,4 +1,6 @@
 /// <reference path="../typings/index.d.ts" />
+/// <reference path="types/loopbacktypes.ts" />
+/// <reference path="types/n_odata_types.ts" />
 /**
  * This module implements the odata server functionality
  * At the moment it is implemented as local loopback component
@@ -26,12 +28,14 @@ import * as express from "express";
 // Configure logging
 // TODO: make logging more flexible, e.g. let user configure the name and location of the log file via component configuration
 import log4js = require('log4js');
-import {ODataServerConfig} from "./types/n_odata_types";
+import {ODataServerConfig, RequestModelClass} from "./types/n_odata_types";
 import {BaseRequestHandler} from "./base/BaseRequestHandler";
 import {GetRequestHandler} from "./base/BaseRequestHandler";
 import {PostRequestHandler} from "./base/BaseRequestHandler";
 import {DeleteRequestHandler} from "./base/BaseRequestHandler";
 import {PutRequestHandler} from "./base/BaseRequestHandler";
+import {LoopbackApp} from "./types/loopbacktypes";
+import {HttpMethod} from "./constants/odata_enums";
 
 
 fs.stat('n_odata_server_log.json', function (err, stat) {
@@ -50,6 +54,8 @@ var logger = log4js.getLogger("odata");
  */
 export class OData {
 	private static singletonInstance: OData;
+
+	private oLoopbackApp: LoopbackApp;
 
 	private _oDataServerConfig:ODataServerConfig;
 	private oDataGet: GetRequestHandler;
@@ -77,6 +83,7 @@ export class OData {
 
 	public init(loopbackApplication, options) {
 		if(!this.initProceeded) {	// run init only once
+			this.oLoopbackApp = loopbackApplication;
 			// save the options defined in a local variable
 			this._oDataServerConfig = this._oDataServerConfig || options || {};
 			// if not defined set a default value for server-side paging
@@ -285,7 +292,7 @@ export class OData {
 			}
 		} catch (e) {
 			console.log(e);
-			res.sendStatus(500);
+			res.status(500).send(e);
 		}
 	}
 
@@ -297,11 +304,16 @@ export class OData {
 	 * @param  {[type]} res [description]
 	 * @return {[type]}     [description]
 	 */
-	private _handleGet(req:express.Request, res:express.Response) {
-		// delegate to get module
-		this.oDataGet.handleGet(req, res);
+	private _handleGet(req: express.Request, res: express.Response) {
+		// check authorization
+		this.checkAccess(req, res, HttpMethod.GET).then(() => {
+			// delegate to version dependend module
+			this.oDataGet.handleGet(req, res);
+		}).catch((err) => {
+			let statusCode = (err && err.statusCode) || 500;
+			res.status(statusCode).send(err);
+		})
 	}
-
 
 	/**
 	 * handles the POST request to the OData server.
@@ -310,8 +322,14 @@ export class OData {
 	 * @return {[type]}     [description]
 	 */
 	private _handlePost(req:express.Request, res:express.Response) {
-		// delegate to post module
-		this.oDataPost.handlePost(req, res);
+		// check authorization
+		this.checkAccess(req, res, HttpMethod.POST).then(() => {
+			// delegate to version dependend module
+			this.oDataPost.handlePost(req, res);
+		}).catch((err) => {
+			let statusCode = (err && err.statusCode) || 500;
+			res.status(statusCode).send(err);
+		})
 	}
 
 	/**
@@ -364,6 +382,121 @@ export class OData {
 	private _handleDelete(req:express.Request, res:express.Response) {
 		// delegate to delete module
 		this.oDataDelete.handleDelete(req, res);
+	}
+
+	/**
+	 * Check access to a function / OData service.
+	 * If the user has access (Promise resolves) the handle... Method to handle the request can be called
+	 * @param req HttpRequest that was sent by the client
+	 * @param res HttpResponse that is sent back to the client
+	 * @param method HttpMethod (GET, POST, PUT, ...)
+	 * @returns {Promise<any>|Promise}
+	 */
+	private checkAccess(req: express.Request, res: express.Response, method: HttpMethod) {
+		return new Promise<any>((resolve, reject) =>
+		{
+			let remotes: any = this.oLoopbackApp.remotes();
+			// get the ModelClass from the request
+			common.getRequestModelClass(this.oLoopbackApp.models, req.params[0]).then((modelClassResult: RequestModelClass) => {
+				let ctx;
+				for (let lbClass of remotes.classes()) {
+					if (lbClass.name === modelClassResult.modelClass.modelName) {
+						if (method === HttpMethod.GET) {
+							ctx = this.getGETCheckAccessContext(req, lbClass);
+							break;
+						} else if (method === HttpMethod.POST) {
+							ctx = this.getPOSTCheckAccessContext(req, lbClass);
+							break;
+						}
+					}
+				}
+				if (ctx) {
+					// call the authorization method of the remotes object
+					if (ctx.method.ctor.checkAccess) {
+						ctx.method.ctor.checkAccess(req.accessToken, ctx.instance.id, ctx.method, ctx, (err, allowed) => {
+							if (err) {
+								console.log(err);
+								reject(err);
+							} else if (allowed) {
+								// delegate to get module
+								resolve();
+							} else {
+
+								let messages = {
+									403: {
+										message: 'Access Denied',
+										code: 'ACCESS_DENIED'
+									},
+									404: {
+										message: ('could not find ' + ctx.method + ' with id ' + ctx.instance.id),
+										code: 'MODEL_NOT_FOUND'
+									},
+									401: {
+										message: 'Authorization Required',
+										code: 'AUTHORIZATION_REQUIRED'
+									}
+								};
+
+								let errStatusCode = 401;
+								let e = new Error(messages[errStatusCode].message || messages[403].message);
+								e.statusCode = errStatusCode;
+								e.code = messages[errStatusCode].code || messages[403].code;
+								reject(e);
+								//res.sendStatus(e.statusCode); //.send(e.message);
+							}
+						});
+					}
+				}
+			});
+		});
+	}
+
+	/**
+	 * Create context for checkAccess Method for a GET request
+	 * @param req
+	 * @param lbClass
+	 * @returns {{method: any, req: express.Request, instance: {id: any}}}
+	 */
+	private getGETCheckAccessContext(req: express.Request, lbClass: any) {
+		// find "find", "findById" or "findOne" method in sharedMethods --> thats our wanted sharedMethod
+		let re = /^\w*[(]([a-zA-Z0-9']*)[)]/g,
+			match = re.exec(req.params[0]),
+			_id,
+			lbMethod;
+		if (match) {
+			lbMethod = lbClass.find("findById", true);
+			_id = match[1];
+		} else {
+			lbMethod = lbClass.find("find", true);
+		}
+
+		return {
+			method: lbMethod,
+			req: req,
+			instance: {
+				id: _id
+			}
+		};
+	}
+
+	/**
+	 * Create context for checkAccess Method for a POST request
+	 * @param req
+	 * @param lbClass
+	 * @returns {{method: any, req: express.Request, instance: {id: any}}}
+	 */
+	private getPOSTCheckAccessContext(req: express.Request, lbClass: any) {
+		// find "create" method in sharedMethods --> this method has to be secured via a POST request
+		let lbMethod;
+		lbMethod = lbClass.find("create", true);
+
+		return {
+			method: lbMethod,
+			req: req,
+			instance: {
+				id: null
+			}
+		};
 	}
 
 }

@@ -6,6 +6,7 @@ import constants = require('../../constants/odata_constants');
 import {MetaAssociation} from "./metaAssociation";
 import builder = require("xmlbuilder");
 import {LoopbackModelProperty} from "../../types/loopbacktypes";
+import {ODataType} from "../../constants/odata_enums";
 
 var logger = log4js.getLogger('metadata');
 
@@ -45,9 +46,10 @@ export class Metadata {
 
 					// exclude deprecated properties
 					if (property.deprecated !== true) {
-						var edmType:String = commons.convertType(property);
-						edmType = edmType || property.type.name;
-						arrProps.push({"@Name": propName, "@Type": edmType});
+						var edmType:ODataType = commons.convertType(property);
+						let edmTypeStr: string = ODataType.getEdmString(edmType);
+						edmTypeStr = edmTypeStr || property.type.name;
+						arrProps.push({"@Name": propName, "@Type": edmTypeStr});
 					}
 
 					if (property.id) {
