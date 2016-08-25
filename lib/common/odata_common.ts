@@ -267,90 +267,106 @@ function _getRequestModelClass(models:Function, requestUri:string) {
     if (!reqParts[3]) {
         return new Promise(function (resolve, reject) {
             _getModelClass(models, reqParts[1]).then(function (ModelClass) {
-                    var sRequestId = _getIdByPropertyType(reqParts[2], ModelClass.definition._ids[0].property);
-                    resolve({
-                        modelClass: ModelClass,
-                        foreignKeyFilter: undefined,
-                        requestId: sRequestId
-                    } as RequestModelClass);
-                }
+								if (ModelClass) {
+									var sRequestId = _getIdByPropertyType(reqParts[2], ModelClass.definition._ids[0].property);
+									resolve({
+										modelClass: ModelClass,
+										foreignKeyFilter: undefined,
+										requestId: sRequestId
+									} as RequestModelClass);
+								} else {
+									resolve({
+										modelClass: undefined,
+										foreignKeyFilter: undefined,
+										requestId: undefined
+									} as RequestModelClass);
+								}
+							}
             )
         });
     } else {
         return new Promise(function (resolve, reject) {
             _getModelClass(models, reqParts[1]).then(function (BaseModelClass) {
-                var modelProps = BaseModelClass.definition.properties;
-                var modelRel = BaseModelClass.settings.relations;
-                if (modelRel && modelRel[reqParts[3]]) {
-                    var oFilter = {}, sForeignKey = modelRel[reqParts[3]].foreignKey;
-                    if (sForeignKey == "") {
-                        sForeignKey = reqParts[3] + "Id";
-                    }
-                    let idName = BaseModelClass.getIdName();
-                    var sRequestId = _getIdByPropertyType(reqParts[2], BaseModelClass.definition.properties[idName]);
+            	if(BaseModelClass) {
+								var modelProps = BaseModelClass.definition.properties;
+								var modelRel = BaseModelClass.settings.relations;
+								if (modelRel && modelRel[reqParts[3]]) {
+									var oFilter = {}, sForeignKey = modelRel[reqParts[3]].foreignKey;
+									if (sForeignKey == "") {
+										sForeignKey = reqParts[3] + "Id";
+									}
+									let idName = BaseModelClass.getIdName();
+									var sRequestId = _getIdByPropertyType(reqParts[2], BaseModelClass.definition.properties[idName]);
 
-                    switch (modelRel[reqParts[3]].type) {
-                        case lbConstants.LB_REL_HASMANY:
-                            //TODO: composite id support
-                            oFilter[sForeignKey] = sRequestId;
-                            //oFilter[sForeignKey] = reqParts[2];
-                            if (!oFilter[sForeignKey]) {
-                                reject("Invalid id");
-                            } else {
-                                _getModelClass(models, modelRel[reqParts[3]].model).then(function (ModelClass) {
-                                    resolve({
-                                        modelClass: ModelClass,
-                                        foreignKeyFilter: oFilter,
-                                        requestId: sRequestId
-                                    } as RequestModelClass);
-                                });
-                            }
-                            break;
-                        case lbConstants.LB_REL_BELONGSTO:
-                            BaseModelClass.findById(sRequestId, function (error, instance) {
-                                if (instance) {
-                                    _getModelClass(models, modelRel[reqParts[3]].model).then(function (ModelClass) {
-                                        let idName = ModelClass.getIdName();
-                                        oFilter[idName] = instance[sForeignKey];
-                                        resolve({
-                                            modelClass: ModelClass,
-                                            foreignKeyFilter: oFilter,
-                                            requestId: sRequestId
-                                        } as RequestModelClass);
-                                    });
-                                } else {
-                                    reject("Entity not found!");
-                                }
-                            });
-                            break;
-                        case lbConstants.LB_REL_HASONE:
-                            //TODO: composite id support
-                            oFilter[sForeignKey] = sRequestId;
-                            //oFilter[sForeignKey] = reqParts[2];
-                            if (!oFilter[sForeignKey]) {
-                                reject("Invalid id");
-                            } else {
-                                _getModelClass(models, modelRel[reqParts[3]].model).then(function (ModelClass) {
-                                    resolve({
-                                        modelClass: ModelClass,
-                                        foreignKeyFilter: oFilter,
-                                        requestId: sRequestId
-                                    } as RequestModelClass);
-                                });
-                            }
-                            break;
-                        default:
-                            var str = modelRel[reqParts[3]].type + " relations not supported yet";
-                            logger.warn(str);
-                            reject(str);
-                            break;
-                        //TODO: lbConstants.LB_REL_HASONE
-                    }
+									switch (modelRel[reqParts[3]].type) {
+										case lbConstants.LB_REL_HASMANY:
+											//TODO: composite id support
+											oFilter[sForeignKey] = sRequestId;
+											//oFilter[sForeignKey] = reqParts[2];
+											if (!oFilter[sForeignKey]) {
+												reject("Invalid id");
+											} else {
+												_getModelClass(models, modelRel[reqParts[3]].model).then(function (ModelClass) {
+													resolve({
+														modelClass: ModelClass,
+														foreignKeyFilter: oFilter,
+														requestId: sRequestId
+													} as RequestModelClass);
+												});
+											}
+											break;
+										case lbConstants.LB_REL_BELONGSTO:
+											BaseModelClass.findById(sRequestId, function (error, instance) {
+												if (instance) {
+													_getModelClass(models, modelRel[reqParts[3]].model).then(function (ModelClass) {
+														let idName = ModelClass.getIdName();
+														oFilter[idName] = instance[sForeignKey];
+														resolve({
+															modelClass: ModelClass,
+															foreignKeyFilter: oFilter,
+															requestId: sRequestId
+														} as RequestModelClass);
+													});
+												} else {
+													reject("Entity not found!");
+												}
+											});
+											break;
+										case lbConstants.LB_REL_HASONE:
+											//TODO: composite id support
+											oFilter[sForeignKey] = sRequestId;
+											//oFilter[sForeignKey] = reqParts[2];
+											if (!oFilter[sForeignKey]) {
+												reject("Invalid id");
+											} else {
+												_getModelClass(models, modelRel[reqParts[3]].model).then(function (ModelClass) {
+													resolve({
+														modelClass: ModelClass,
+														foreignKeyFilter: oFilter,
+														requestId: sRequestId
+													} as RequestModelClass);
+												});
+											}
+											break;
+										default:
+											var str = modelRel[reqParts[3]].type + " relations not supported yet";
+											logger.warn(str);
+											reject(str);
+											break;
+										//TODO: lbConstants.LB_REL_HASONE
+									}
 
 
-                } else {
-                    resolve({modelClass: BaseModelClass} as RequestModelClass);
-                }
+								} else {
+									resolve({modelClass: BaseModelClass} as RequestModelClass);
+								}
+							} else {
+								resolve({
+									modelClass: undefined,
+									foreignKeyFilter: undefined,
+									requestId: undefined
+								} as RequestModelClass);
+							}
             });
         });
     }
@@ -366,6 +382,10 @@ function _getRequestModelClass(models:Function, requestUri:string) {
 function _getModelClass(models:any, className:string) {
     return new Promise<any>((resolve, reject) => {
         var ModelClass;
+
+				if(className === "$metadata") {
+					resolve(undefined);
+				}
 
         if (className.indexOf('(') !== -1) {
             // its a request for a single entity object

@@ -395,59 +395,76 @@ export class OData {
 	private checkAccess(req: express.Request, res: express.Response, method: HttpMethod) {
 		return new Promise<any>((resolve, reject) =>
 		{
-			let remotes: any = this.oLoopbackApp.remotes();
-			// get the ModelClass from the request
-			common.getRequestModelClass(this.oLoopbackApp.models, req.params[0]).then((modelClassResult: RequestModelClass) => {
-				let ctx;
-				for (let lbClass of remotes.classes()) {
-					if (lbClass.name === modelClassResult.modelClass.modelName) {
-						if (method === HttpMethod.GET) {
-							ctx = this.getGETCheckAccessContext(req, lbClass);
-							break;
-						} else if (method === HttpMethod.POST) {
-							ctx = this.getPOSTCheckAccessContext(req, lbClass);
-							break;
+			// $metadata and service requests are allways allowed
+			if(req.params[0] === "$metadata" || req.params[0] === "") {
+				resolve();
+			} else {
+
+				let remotes: any = this.oLoopbackApp.remotes();
+				// get the ModelClass from the request
+				common.getRequestModelClass(this.oLoopbackApp.models, req.params[0]).then((modelClassResult: RequestModelClass) => {
+					let ctx;
+					// some requests do not return a modelClass
+					if (modelClassResult && modelClassResult.modelClass) {
+						for (let lbClass of remotes.classes()) {
+							if (lbClass.name === modelClassResult.modelClass.modelName) {
+								if (method === HttpMethod.GET) {
+									ctx = this.getGETCheckAccessContext(req, lbClass);
+									break;
+								} else if (method === HttpMethod.POST) {
+									ctx = this.getPOSTCheckAccessContext(req, lbClass);
+									break;
+								}
+							}
 						}
 					}
-				}
-				if (ctx) {
-					// call the authorization method of the remotes object
-					if (ctx.method.ctor.checkAccess) {
-						ctx.method.ctor.checkAccess(req.accessToken, ctx.instance.id, ctx.method, ctx, (err, allowed) => {
-							if (err) {
-								console.log(err);
-								reject(err);
-							} else if (allowed) {
-								// delegate to get module
-								resolve();
-							} else {
+					if (ctx) {
+						// call the authorization method of the remotes object
+						if (ctx.method.ctor.checkAccess) {
+							ctx.method.ctor.checkAccess(req.accessToken, ctx.instance.id, ctx.method, ctx, (err, allowed) => {
+								if (err) {
+									console.log(err);
+									reject(err);
+								} else if (allowed) {
+									// delegate to get module
+									resolve();
+								} else {
 
-								let messages = {
-									403: {
-										message: 'Access Denied',
-										code: 'ACCESS_DENIED'
-									},
-									404: {
-										message: ('could not find ' + ctx.method + ' with id ' + ctx.instance.id),
-										code: 'MODEL_NOT_FOUND'
-									},
-									401: {
-										message: 'Authorization Required',
-										code: 'AUTHORIZATION_REQUIRED'
-									}
-								};
+									let messages = {
+										403: {
+											message: 'Access Denied',
+											code: 'ACCESS_DENIED'
+										},
+										404: {
+											message: ('could not find ' + ctx.method + ' with id ' + ctx.instance.id),
+											code: 'MODEL_NOT_FOUND'
+										},
+										401: {
+											message: 'Authorization Required',
+											code: 'AUTHORIZATION_REQUIRED'
+										}
+									};
 
-								let errStatusCode = 401;
-								let e = new Error(messages[errStatusCode].message || messages[403].message);
-								e.statusCode = errStatusCode;
-								e.code = messages[errStatusCode].code || messages[403].code;
-								reject(e);
-								//res.sendStatus(e.statusCode); //.send(e.message);
-							}
-						});
+									let errStatusCode = 401;
+									let e = new Error(messages[errStatusCode].message || messages[403].message);
+									e.statusCode = errStatusCode;
+									e.code = messages[errStatusCode].code || messages[403].code;
+									reject(e);
+									//res.sendStatus(e.statusCode); //.send(e.message);
+								}
+							});
+						}
+					} else {
+						console.error(`Something went wrong with retrieving requestModelClass for request ${req.params[0]}`);
+						let err = new Error(`You don't have access to request ${req.params[0]}`) as any;
+						err.statusCode = 401;
+						reject(err);
 					}
-				}
-			});
+				}).catch(err => {
+					console.error(err);
+					reject(err);
+				});
+			}
 		});
 	}
 
