@@ -55,11 +55,15 @@ of your project. Add the following lines to this file
   "n-odata-server": {
     "path": "/odata/*",
     "odataversion": "2",
-    "useViaMiddleware": true
+    "useViaMiddleware": true,
+    "logger" : false
   }
 ```
 The line `"odataversion": "2"` means that the server works with OData V2. We highly recommend to use this version at the
 moment.
+
+The line `"logger": false` means that the logger is turned off (recommended for productive usage). If this line is
+omitted or is set to true, the log will be turned on and will generate logs in file and console.
 
 Additionally you have to add route handling information to the file
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;`server/middleware.json`

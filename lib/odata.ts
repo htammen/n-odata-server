@@ -91,6 +91,14 @@ export class OData {
 				this._oDataServerConfig.maxpagesize = constants.ODATA_MAXPAGESIZE;
 			}
 
+			// if not defined set a default the log enabled for default
+			if (typeof this._oDataServerConfig.logger === "undefined") {
+				this._oDataServerConfig.logger = true;
+			}
+
+			if(!this._oDataServerConfig.logger){
+				logger.setLevel("OFF");
+			}
 			// retrieve odata prefix from path
 			let _pathArr = (options && options.path && options.path.split('/'));
 			if (_pathArr) {

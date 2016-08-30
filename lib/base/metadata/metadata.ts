@@ -14,162 +14,166 @@ var logger = log4js.getLogger('metadata');
  * This class handles the meatdata of the OData service
  */
 export class Metadata {
-	private _associations:Array<MetaAssociation>;
-	private _app:any;
-	private _modelConfig:any;
+    private _associations:Array<MetaAssociation>;
+    private _app:any;
+    private _modelConfig:any;
 
-	constructor(app) {
-		this._app = app;
-		this._associations = [];
-		this._modelConfig = require("../../../../../server/model-config.json")
-	};
+    constructor(app) {
+        this._app = app;
+        this._associations = [];
+        this._modelConfig = require("../../../../../server/model-config.json")
 
-	/**
-	 * This function builds the metadata output for the current application
-	 * @param models
-	 * @returns {any}
-	 */
-	public buildMetadata():Promise<any> {
-		logger.trace("entering buildMetadata");
-		var EntityType = [];
-		var EntitySet = [];
-		var appModels = this._app.models();  // have to do this because models will not be known in forEach
+        if (!commons.isLoggerOn()) {
+            logger.setLevel("OFF");
+        }
+    };
 
-		this._app.models().forEach((function (model) {
-			    if(!this._modelConfig[model.definition.name].public) return;
+    /**
+     * This function builds the metadata output for the current application
+     * @param models
+     * @returns {any}
+     */
+    public buildMetadata():Promise<any> {
+        logger.trace("entering buildMetadata");
+        var EntityType = [];
+        var EntitySet = [];
+        var appModels = this._app.models();  // have to do this because models will not be known in forEach
 
-				var entityTypeObj:any = {
-					"@Name": model.definition.name
-				};
+        this._app.models().forEach((function (model) {
+                if (!this._modelConfig[model.definition.name].public) return;
 
-				// Properties of EntityType
-				var arrProps:Array<Object> = [];
-				model.definition.columnNames().forEach((function (propName) {
-					var property:LoopbackModelProperty = model.definition.properties[propName];
+                var entityTypeObj:any = {
+                    "@Name": model.definition.name
+                };
 
-					// exclude deprecated properties
-					if (property.deprecated !== true) {
-						var edmType:ODataType = commons.convertType(property);
-						let edmTypeStr: string = ODataType.getEdmString(edmType);
-						edmTypeStr = edmTypeStr || property.type.name;
-						arrProps.push({"@Name": propName, "@Type": edmTypeStr});
-					}
+                // Properties of EntityType
+                var arrProps:Array<Object> = [];
+                model.definition.columnNames().forEach((function (propName) {
+                    var property:LoopbackModelProperty = model.definition.properties[propName];
 
-					if (property.id) {
-						entityTypeObj.Key = {
-							PropertyRef: {
-								"@Name": propName
-							}
-						}
-					}
-				}).bind(this));
-				entityTypeObj.Property = arrProps;
+                    // exclude deprecated properties
+                    if (property.deprecated !== true) {
+                        var edmType:ODataType = commons.convertType(property);
+                        let edmTypeStr:string = ODataType.getEdmString(edmType);
+                        edmTypeStr = edmTypeStr || property.type.name;
+                        arrProps.push({"@Name": propName, "@Type": edmTypeStr});
+                    }
 
-
-				// NavigationProperties of EntityType
-				var arrNavProps:Array<Object> = [];
-				for (var relation in model.definition.settings.relations) {
-					//no explose public methods
-					if(!this._modelConfig[model.definition.settings.relations[relation].model].public ) continue;
-
-					var currentAssoc:MetaAssociation = MetaAssociation.findOrCreateAssociationForModelRelation(model.definition, model.definition.settings.relations[relation], relation, appModels, this._associations);
-					var navProperty = {
-						"@Name": relation,
-						"@Relationship": constants.ODATA_NAMESPACE + "." + currentAssoc.getName()
-					};
-					navProperty["@FromRole"] = (currentAssoc ? currentAssoc.getRolenameFor(model.definition.name) : "N.A.");
-					navProperty["@ToRole"] = (currentAssoc ? currentAssoc.getRolenameFor(model.definition.settings.relations[relation].model) : "N.A.");
-					arrNavProps.push(navProperty);
-				}
-				if(arrNavProps.length > 0 ) {
-					entityTypeObj.NavigationProperty = arrNavProps;
-				}
-
-				EntityType.push(entityTypeObj);
+                    if (property.id) {
+                        entityTypeObj.Key = {
+                            PropertyRef: {
+                                "@Name": propName
+                            }
+                        }
+                    }
+                }).bind(this));
+                entityTypeObj.Property = arrProps;
 
 
-				// Create EntitySet for EntityType
-				var entitySetObj:any = {
-					"@Name": commons.getPluralForModel(model),
-					"@EntityType": constants.ODATA_NAMESPACE + '.' + model.definition.name
-				};
-				EntitySet.push(entitySetObj);
-			}).bind(this)
-		);
+                // NavigationProperties of EntityType
+                var arrNavProps:Array<Object> = [];
+                for (var relation in model.definition.settings.relations) {
+                    //no explose public methods
+                    if (!this._modelConfig[model.definition.settings.relations[relation].model].public) continue;
 
-		//TODO: create metadata for complexTypes
-		//for (var typeKey in model.complexTypes) {
-		//	var complexType = {
-		//		"ComplexType": {
-		//			"@Name": typeKey,
-		//			"#list": []
-		//		}
-		//	};
-		//
-		//	for (var propKey in model.complexTypes[typeKey]) {
-		//		var property = model.complexTypes[typeKey][propKey];
-		//
-		//		complexType.ComplexType["#list"].push({
-		//			"Property": {"@Name": propKey, "@Type": property.type}
-		//		});
-		//	}
-		//
-		//	schemas.push(complexType);
-		//}
+                    var currentAssoc:MetaAssociation = MetaAssociation.findOrCreateAssociationForModelRelation(model.definition, model.definition.settings.relations[relation], relation, appModels, this._associations);
+                    var navProperty = {
+                        "@Name": relation,
+                        "@Relationship": constants.ODATA_NAMESPACE + "." + currentAssoc.getName()
+                    };
+                    navProperty["@FromRole"] = (currentAssoc ? currentAssoc.getRolenameFor(model.definition.name) : "N.A.");
+                    navProperty["@ToRole"] = (currentAssoc ? currentAssoc.getRolenameFor(model.definition.settings.relations[relation].model) : "N.A.");
+                    arrNavProps.push(navProperty);
+                }
+                if (arrNavProps.length > 0) {
+                    entityTypeObj.NavigationProperty = arrNavProps;
+                }
 
-		var associationPromises:Array<any> = MetaAssociation.getAssociationsForXML(this._associations);
-		var associationSetPromises:Array<any> = MetaAssociation.getAssociationSetsForXML(this._associations, this._app.models);
+                EntityType.push(entityTypeObj);
 
-		return new Promise((resolve, reject) => {
-			Promise.all(associationPromises)
-				.then(function (associationPromises) {
-					var Association:Array<any> = [];
-					for (var i = 0; i < associationPromises.length; i++) {
-						Association.push(associationPromises[i]);
-					}
-					return Association;
-				}).then(function (Associations:Array<any>) {
-					Promise.all(associationSetPromises).then(function (associationSetPromises) {
-							var AssociationSet:Array<any> = [];
-							for (var i = 0; i < associationSetPromises.length; i++) {
-								AssociationSet.push(associationSetPromises[i]);
-							}
-							return {Assoc: Associations, AssocSet: AssociationSet};
-					}
-				).then((obj:any) => {
-					var Association = obj.Assoc;
-					var AssociationSet = obj.AssocSet;
-					var xmlBuilder = builder.create(
-						{
-							"edmx:Edmx": {
-								"@xmlns:edmx": "http://schemas.microsoft.com/ado/2007/06/edmx",
-								"@xmlns:m": "http://schemas.microsoft.com/ado/2007/08/dataservices/metadata",
-								"@Version": "1.0",
-								"edmx:DataServices": {
-									"@m:DataServiceVersion": "2.0",
-									"Schema": {
-										"@xmlns": "http://schemas.microsoft.com/ado/2008/09/edm",
-										"@Namespace": constants.ODATA_NAMESPACE,
-										EntityType,
-										Association,
-										"EntityContainer": {
-											"@Name": constants.ODATA_NAMESPACE,
-											"@m:IsDefaultEntityContainer": "true",
-											EntitySet,
-											AssociationSet
-										}
-									}
-								}
-							}
-						}, {version: '1.0', encoding: 'UTF-8'}
-					).end({pretty: true});
-					logger.trace('metadata xml build');
-					resolve(xmlBuilder);
-				});
-				})
-		})
 
-	};
+                // Create EntitySet for EntityType
+                var entitySetObj:any = {
+                    "@Name": commons.getPluralForModel(model),
+                    "@EntityType": constants.ODATA_NAMESPACE + '.' + model.definition.name
+                };
+                EntitySet.push(entitySetObj);
+            }).bind(this)
+        );
+
+        //TODO: create metadata for complexTypes
+        //for (var typeKey in model.complexTypes) {
+        //	var complexType = {
+        //		"ComplexType": {
+        //			"@Name": typeKey,
+        //			"#list": []
+        //		}
+        //	};
+        //
+        //	for (var propKey in model.complexTypes[typeKey]) {
+        //		var property = model.complexTypes[typeKey][propKey];
+        //
+        //		complexType.ComplexType["#list"].push({
+        //			"Property": {"@Name": propKey, "@Type": property.type}
+        //		});
+        //	}
+        //
+        //	schemas.push(complexType);
+        //}
+
+        var associationPromises:Array<any> = MetaAssociation.getAssociationsForXML(this._associations);
+        var associationSetPromises:Array<any> = MetaAssociation.getAssociationSetsForXML(this._associations, this._app.models);
+
+        return new Promise((resolve, reject) => {
+            Promise.all(associationPromises)
+                .then(function (associationPromises) {
+                    var Association:Array<any> = [];
+                    for (var i = 0; i < associationPromises.length; i++) {
+                        Association.push(associationPromises[i]);
+                    }
+                    return Association;
+                }).then(function (Associations:Array<any>) {
+                Promise.all(associationSetPromises).then(function (associationSetPromises) {
+                        var AssociationSet:Array<any> = [];
+                        for (var i = 0; i < associationSetPromises.length; i++) {
+                            AssociationSet.push(associationSetPromises[i]);
+                        }
+                        return {Assoc: Associations, AssocSet: AssociationSet};
+                    }
+                ).then((obj:any) => {
+                    var Association = obj.Assoc;
+                    var AssociationSet = obj.AssocSet;
+                    var xmlBuilder = builder.create(
+                        {
+                            "edmx:Edmx": {
+                                "@xmlns:edmx": "http://schemas.microsoft.com/ado/2007/06/edmx",
+                                "@xmlns:m": "http://schemas.microsoft.com/ado/2007/08/dataservices/metadata",
+                                "@Version": "1.0",
+                                "edmx:DataServices": {
+                                    "@m:DataServiceVersion": "2.0",
+                                    "Schema": {
+                                        "@xmlns": "http://schemas.microsoft.com/ado/2008/09/edm",
+                                        "@Namespace": constants.ODATA_NAMESPACE,
+                                        EntityType,
+                                        Association,
+                                        "EntityContainer": {
+                                            "@Name": constants.ODATA_NAMESPACE,
+                                            "@m:IsDefaultEntityContainer": "true",
+                                            EntitySet,
+                                            AssociationSet
+                                        }
+                                    }
+                                }
+                            }
+                        }, {version: '1.0', encoding: 'UTF-8'}
+                    ).end({pretty: true});
+                    logger.trace('metadata xml build');
+                    resolve(xmlBuilder);
+                });
+            })
+        })
+
+    };
 
 }
 
