@@ -16,10 +16,12 @@ var logger = log4js.getLogger('metadata');
 export class Metadata {
 	private _associations:Array<MetaAssociation>;
 	private _app:any;
+	private _modelConfig:any;
 
 	constructor(app) {
 		this._app = app;
 		this._associations = [];
+		this._modelConfig = require("../../../../../server/model-config.json")
 	};
 
 	/**
@@ -34,6 +36,7 @@ export class Metadata {
 		var appModels = this._app.models();  // have to do this because models will not be known in forEach
 
 		this._app.models().forEach((function (model) {
+			    if(!this._modelConfig[model.definition.name].public) return;
 
 				var entityTypeObj:any = {
 					"@Name": model.definition.name
@@ -66,6 +69,9 @@ export class Metadata {
 				// NavigationProperties of EntityType
 				var arrNavProps:Array<Object> = [];
 				for (var relation in model.definition.settings.relations) {
+					//no explose public methods
+					if(!this._modelConfig[model.definition.settings.relations[relation].model].public ) continue;
+
 					var currentAssoc:MetaAssociation = MetaAssociation.findOrCreateAssociationForModelRelation(model.definition, model.definition.settings.relations[relation], relation, appModels, this._associations);
 					var navProperty = {
 						"@Name": relation,
