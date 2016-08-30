@@ -22,6 +22,8 @@ export enum HttpMethod {
 	GET,
 	POST,
 	PUT,
+	PATCH,
+	MERGE,
 	DELETE,
 	OPTIONS,
 	HEAD,

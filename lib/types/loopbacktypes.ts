@@ -1,3 +1,5 @@
+import * as express from "express";
+
 /** Interface for loopback application */
 export interface LoopbackApp {
 	models: any;
@@ -83,4 +85,8 @@ export interface LoopbackModelProperty {
 		name: string
 	},
 	id: string
+}
+
+export interface LoopbackRequest extends express.Request {
+	accessToken?: any
 }

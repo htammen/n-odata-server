@@ -37,7 +37,7 @@ export class ODataDeleteBase extends BaseRequestHandler.BaseRequestHandler{
 						}
 					});
 				} else {
-					res.sendStatus(404);
+					reject(404);
 				}
 			});
 		});

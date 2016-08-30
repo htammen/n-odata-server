@@ -34,7 +34,7 @@ import {GetRequestHandler} from "./base/BaseRequestHandler";
 import {PostRequestHandler} from "./base/BaseRequestHandler";
 import {DeleteRequestHandler} from "./base/BaseRequestHandler";
 import {PutRequestHandler} from "./base/BaseRequestHandler";
-import {LoopbackApp} from "./types/loopbacktypes";
+import {LoopbackApp, LoopbackRequest} from "./types/loopbacktypes";
 import {HttpMethod} from "./constants/odata_enums";
 
 
@@ -170,64 +170,49 @@ export class OData {
 	 * @param res HTTP response
 	 * @param next next phase in phase chain
 	 */
-	public handleRequestV2(req:express.Request, res:express.Response, next) {
+	public handleRequestV2(req:LoopbackRequest, res:express.Response, next) {
 		try {
 			logger.info("processing OData V2 request of type " + req.method);
 			logger.debug("baseUrl = " + req.baseUrl);
-			switch (req.method) {
-				case 'GET':
-					this._handleGet(req, res);
-					break;
-				case 'POST':
-					var x_http_method:string = req.get('x-http-method');
-					if (x_http_method) {
-						switch (x_http_method) {
-							case 'MERGE':
-								this._handleMerge(req, res);
-								break;
-							case 'PATCH':
-								this._handleMerge(req, res);
-								break;
-							case 'PUT':
-								this._handlePut(req, res);
-								break;
-							case 'DELETE':
-								this._handleDelete(req, res);
-								break;
-
-							default:
-								res.status(500).send("HTTP verb " + x_http_method + " not supported by POST tunneling");
-						}
-					} else {
+			this.checkAccess(req, res).then(() => {
+				let method:HttpMethod = this.getRequestMethod(req);
+				switch (method) {
+					case HttpMethod.GET:
+						this._handleGet(req, res);
+						break;
+					case HttpMethod.POST:
 						this._handlePost(req, res);
-					}
-					break;
-				// PUT is used to update an entity and to overwrite all property values with its default
-				// values if they are not submitted with the request. In other words it resets an entity and
-				// only sets the submitted properties
-				case 'PUT':
-					this._handlePut(req, res);
-					var i = 2;
-					break;
-				//// PATCH should be the preferred method to update an entity
-				//case 'PATCH':
-				//	_handlePATCH.call(this, req, res);
-				//	break;
-				//// MERGE is used in OData V2.0 to update an entity. This has been changed in
-				//// in V4.0 to PATCH
-				//case 'MERGE':
-				//	_handlePATCH.call(this, req, res);
-				//	break;
-				case 'DELETE':
-					this._handleDelete(req, res);
-					break;
-				default:
-					res.sendStatus(404);
-					break;
-			}
+						break;
+					// PUT is used to update an entity and to overwrite all property values with its default
+					// values if they are not submitted with the request. In other words it resets an entity and
+					// only sets the submitted properties
+					case HttpMethod.PUT:
+						this._handlePut(req, res);
+						var i = 2;
+						break;
+					//// PATCH should be the preferred method to update an entity
+					//case 'PATCH':
+					//	_handlePATCH.call(this, req, res);
+					//	break;
+					//// MERGE is used in OData V2.0 to update an entity. This has been changed in
+					//// in V4.0 to PATCH
+					//case 'MERGE':
+					//	_handlePATCH.call(this, req, res);
+					//	break;
+					case HttpMethod.DELETE:
+						this._handleDelete(req, res);
+						break;
+					default:
+						res.sendStatus(404);
+						break;
+				}
+			}).catch((err) => {
+				let statusCode = (err && err.statusCode) || 500;
+				res.status(statusCode).send(err);
+			});
 		} catch (e) {
 			console.log(e);
-			res.sendStatus(500);
+			res.status(500).send(e);
 		}
 	}
 
@@ -238,58 +223,43 @@ export class OData {
 	 * @param res HTTP response
 	 * @param next next phase in phase chain
 	 */
-	public handleRequestV4(req:express.Request, res:express.Response, next) {
+	public handleRequestV4(req:LoopbackRequest, res:express.Response, next) {
 		try {
-			switch (req.method) {
-				case 'GET':
-					this._handleGet(req, res);
-					break;
-				case 'POST':
-					var x_http_method:string = req.get('x-http-method');
-					if (x_http_method) {
-						switch (x_http_method) {
-							case 'MERGE':
-								this._handlePatch(req, res);
-								break;
-							case 'PATCH':
-								this._handlePatch(req, res);
-								break;
-							case 'PUT':
-								this._handlePut(req, res);
-								break;
-							case 'DELETE':
-								this._handleDelete(req, res);
-								break;
-
-							default:
-								res.status(500).send("HTTP verb " + x_http_method + " not supported by POST tunneling");
-						}
-					} else {
+			this.checkAccess(req, res).then(() => {
+				let method = this.getRequestMethod(req);
+				switch (method) {
+					case HttpMethod.GET:
+						this._handleGet(req, res);
+						break;
+					case HttpMethod.POST:
 						this._handlePost(req, res);
-					}
-					break;
-				// PUT is used to update an entity and to overwrite all property values with its default
-				// values if they are not submitted with the request. In other words it resets an entity and
-				// only sets the submitted properties
-				case 'PUT':
-					this._handlePut(req, res);
-					break;
-				// PATCH should be the preferred method to update an entity
-				case 'PATCH':
-					this._handlePatch(req, res);
-					break;
-				// MERGE is used in OData V2.0 to update an entity. This has been changed in
-				// in V4.0 to PATCH
-				case 'MERGE':
-					this._handlePatch(req, res);
-					break;
-				case 'DELETE':
-					this._handleDelete(req, res);
-					break;
-				default:
-					res.sendStatus(404);
-					break;
-			}
+						break;
+					// PUT is used to update an entity and to overwrite all property values with its default
+					// values if they are not submitted with the request. In other words it resets an entity and
+					// only sets the submitted properties
+					case HttpMethod.PUT:
+						this._handlePut(req, res);
+						break;
+					// PATCH should be the preferred method to update an entity
+					case HttpMethod.PATCH:
+						this._handlePatch(req, res);
+						break;
+					// MERGE is used in OData V2.0 to update an entity. This has been changed in
+					// in V4.0 to PATCH
+					case HttpMethod.MERGE:
+						this._handlePatch(req, res);
+						break;
+					case HttpMethod.DELETE:
+						this._handleDelete(req, res);
+						break;
+					default:
+						res.sendStatus(404);
+						break;
+				}
+			}).catch((err) => {
+				let statusCode = (err && err.statusCode) || 500;
+				res.status(statusCode).send(err);
+			});
 		} catch (e) {
 			console.log(e);
 			res.status(500).send(e);
@@ -304,15 +274,9 @@ export class OData {
 	 * @param  {[type]} res [description]
 	 * @return {[type]}     [description]
 	 */
-	private _handleGet(req: express.Request, res: express.Response) {
-		// check authorization
-		this.checkAccess(req, res, HttpMethod.GET).then(() => {
-			// delegate to version dependend module
-			this.oDataGet.handleGet(req, res);
-		}).catch((err) => {
-			let statusCode = (err && err.statusCode) || 500;
-			res.status(statusCode).send(err);
-		})
+	private _handleGet(req: LoopbackRequest, res: express.Response) {
+		// delegate to version dependend module
+		this.oDataGet.handleGet(req, res);
 	}
 
 	/**
@@ -321,15 +285,9 @@ export class OData {
 	 * @param  {[type]} res [description]
 	 * @return {[type]}     [description]
 	 */
-	private _handlePost(req:express.Request, res:express.Response) {
-		// check authorization
-		this.checkAccess(req, res, HttpMethod.POST).then(() => {
-			// delegate to version dependend module
-			this.oDataPost.handlePost(req, res);
-		}).catch((err) => {
-			let statusCode = (err && err.statusCode) || 500;
-			res.status(statusCode).send(err);
-		})
+	private _handlePost(req:LoopbackRequest, res:express.Response) {
+		// delegate to version dependend module
+		this.oDataPost.handlePost(req, res);
 	}
 
 	/**
@@ -341,7 +299,7 @@ export class OData {
 	 * @param res
 	 * @private
 	 */
-	private _handlePut(req:express.Request, res:express.Response) {
+	private _handlePut(req:LoopbackRequest, res:express.Response) {
 		// delegate to put module
 		this.oDataPut.handlePut(req, res);
 	}
@@ -389,16 +347,17 @@ export class OData {
 	 * If the user has access (Promise resolves) the handle... Method to handle the request can be called
 	 * @param req HttpRequest that was sent by the client
 	 * @param res HttpResponse that is sent back to the client
-	 * @param method HttpMethod (GET, POST, PUT, ...)
 	 * @returns {Promise<any>|Promise}
 	 */
-	private checkAccess(req: express.Request, res: express.Response, method: HttpMethod) {
+	private checkAccess(req: LoopbackRequest, res: express.Response) {
 		return new Promise<any>((resolve, reject) =>
 		{
 			// $metadata and service requests are allways allowed
 			if(req.params[0] === "$metadata" || req.params[0] === "") {
 				resolve();
 			} else {
+				// get the http verb from the request
+				let method:HttpMethod = this.getRequestMethod(req);
 
 				let remotes: any = this.oLoopbackApp.remotes();
 				// get the ModelClass from the request
@@ -414,11 +373,18 @@ export class OData {
 								} else if (method === HttpMethod.POST) {
 									ctx = this.getPOSTCheckAccessContext(req, lbClass);
 									break;
+								} else if (method === HttpMethod.PUT || method === HttpMethod.PATCH || method === HttpMethod.MERGE) {
+									ctx = this.getPUTCheckAccessContext(req, lbClass);
+									break;
+								} else if (method === HttpMethod.DELETE) {
+									ctx = this.getDELETECheckAccessContext(req, lbClass);
+									break;
 								}
 							}
 						}
 					}
-					if (ctx) {
+					// ctx must contain at least a method and an instance object
+					if (ctx && ctx.method && ctx.instance) {
 						// call the authorization method of the remotes object
 						if (ctx.method.ctor.checkAccess) {
 							ctx.method.ctor.checkAccess(req.accessToken, ctx.instance.id, ctx.method, ctx, (err, allowed) => {
@@ -446,7 +412,7 @@ export class OData {
 									};
 
 									let errStatusCode = 401;
-									let e = new Error(messages[errStatusCode].message || messages[403].message);
+									let e = new Error(messages[errStatusCode].message || messages[403].message) as any;
 									e.statusCode = errStatusCode;
 									e.code = messages[errStatusCode].code || messages[403].code;
 									reject(e);
@@ -456,7 +422,7 @@ export class OData {
 						}
 					} else {
 						console.error(`Something went wrong with retrieving requestModelClass for request ${req.params[0]}`);
-						let err = new Error(`You don't have access to request ${req.params[0]}`) as any;
+						let err = new Error(`You don't have access to request ${req.params[0]}.`) as any;
 						err.statusCode = 401;
 						reject(err);
 					}
@@ -469,12 +435,29 @@ export class OData {
 	}
 
 	/**
+	 * returns the http method (verb) from the request
+	 * @param req the http request
+	 * @returns {HttpMethod} the verb/method of the http request, e.g. GET, POST, PUT, ...
+	 */
+	private getRequestMethod(req: express.Request) {
+		let method = req.method;
+		if( method === HttpMethod[HttpMethod.POST]) {
+			// check if http post tunneling is used (SAPUI5 uses it)
+			let x_http_method: string = req.get('x-http-method');
+			if (x_http_method) {
+				method = x_http_method;
+			}
+		}
+		return HttpMethod[method];
+	}
+
+	/**
 	 * Create context for checkAccess Method for a GET request
 	 * @param req
 	 * @param lbClass
-	 * @returns {{method: any, req: express.Request, instance: {id: any}}}
+	 * @returns {{method: any, req: LoopbackRequest, instance: {id: any}}}
 	 */
-	private getGETCheckAccessContext(req: express.Request, lbClass: any) {
+	private getGETCheckAccessContext(req: LoopbackRequest, lbClass: any) {
 		// find "find", "findById" or "findOne" method in sharedMethods --> thats our wanted sharedMethod
 		let re = /^\w*[(]([a-zA-Z0-9']*)[)]/g,
 			match = re.exec(req.params[0]),
@@ -500,9 +483,9 @@ export class OData {
 	 * Create context for checkAccess Method for a POST request
 	 * @param req
 	 * @param lbClass
-	 * @returns {{method: any, req: express.Request, instance: {id: any}}}
+	 * @returns {{method: any, req: LoopbackRequest, instance: {id: any}}}
 	 */
-	private getPOSTCheckAccessContext(req: express.Request, lbClass: any) {
+	private getPOSTCheckAccessContext(req: LoopbackRequest, lbClass: any) {
 		// find "create" method in sharedMethods --> this method has to be secured via a POST request
 		let lbMethod;
 		lbMethod = lbClass.find("create", true);
@@ -512,6 +495,60 @@ export class OData {
 			req: req,
 			instance: {
 				id: null
+			}
+		};
+	}
+
+	/**
+	 * Create context for checkAccess Method for a PUT request
+	 * @param req
+	 * @param lbClass
+	 * @returns {{method: any, req: LoopbackRequest, instance: {id: any}}}
+	 */
+	private getPUTCheckAccessContext(req: LoopbackRequest, lbClass: any) {
+		// find "updateAttributes" method in sharedMethods --> this method has to be secured via a POST request
+		let re = /^\w*[(]([a-zA-Z0-9']*)[)]/g,
+			match = re.exec(req.params[0]),
+			_id,
+			lbMethod;
+
+		if (match) {
+			lbMethod = lbClass.find("updateAttributes", false);
+			_id = match[1];
+		}
+
+		return {
+			method: lbMethod,
+			req: req,
+			instance: {
+				id: _id
+			}
+		};
+	}
+
+	/**
+	 * Create context for checkAccess Method for a DELETE request
+	 * @param req
+	 * @param lbClass
+	 * @returns {{method: any, req: LoopbackRequest, instance: {id: any}}}
+	 */
+	private getDELETECheckAccessContext(req: LoopbackRequest, lbClass: any) {
+		// find "updateAttributes" method in sharedMethods --> this method has to be secured via a POST request
+		let re = /^\w*[(]([a-zA-Z0-9']*)[)]/g,
+			match = re.exec(req.params[0]),
+			_id,
+			lbMethod;
+
+		if (match) {
+			lbMethod = lbClass.find("destroyById", true);
+			_id = match[1];
+		}
+
+		return {
+			method: lbMethod,
+			req: req,
+			instance: {
+				id: _id
 			}
 		};
 	}

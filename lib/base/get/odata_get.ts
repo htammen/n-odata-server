@@ -821,11 +821,15 @@ function _findInstanceByIdOrForeignkey(ModelClass:LoopbackModelClass, id:any, fi
 		if (oReqQueryObject.foreignKeyFilter) {
 			ModelClass.find({where: oReqQueryObject.foreignKeyFilter}).then(((instances) => {
 				resolve(instances);
-			}));
+			})).catch((err) => {
+				reject(err);
+			});
 		} else {
 			ModelClass.findById(id, filter).then(((instance) => {
 				resolve([instance]);
-			}));
+			})).catch((err) => {
+				reject(err);
+			});
 		}
 	});
 }
