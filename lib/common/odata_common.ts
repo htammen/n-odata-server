@@ -455,7 +455,9 @@ function _convertType(property:LoopbackModelProperty):ODataType {
 }
 
 function _isLoggerOn() {
-    return oDataServerConfig.logger;
+    if (typeof oDataServerConfig !== "undefined") {
+        return oDataServerConfig.logger;
+    }
 }
 
 
