@@ -83,6 +83,7 @@ export class OData {
 
 	public init(loopbackApplication, options) {
 		if(!this.initProceeded) {	// run init only once
+			options = options || {}; // ensure that options not undefined
 			this.oLoopbackApp = loopbackApplication;
 			// save the options defined in a local variable
 			this._oDataServerConfig = this._oDataServerConfig || options || {};
@@ -349,7 +350,7 @@ export class OData {
 	 * @param res HttpResponse that is sent back to the client
 	 * @returns {Promise<any>|Promise}
 	 */
-	private checkAccess(req: LoopbackRequest, res: express.Response) {
+	checkAccess(req: LoopbackRequest, res: express.Response) {
 		return new Promise<any>((resolve, reject) =>
 		{
 			// $metadata and service requests are allways allowed

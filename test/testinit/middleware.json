@@ -1,0 +1,27 @@
+{
+  "initial:before": {
+  },
+  "initial": {
+    "compression": {},
+    "cors": {
+      "params": {
+        "origin": true,
+        "credentials": true,
+        "maxAge": 86400
+      }
+    }
+  },
+  "session": {},
+  "auth": {
+		"loopback#token": {}
+  },
+  "parse": {},
+  "routes": {
+  },
+  "files": {
+  },
+  "final": {
+  },
+  "final:after": {
+  }
+}
