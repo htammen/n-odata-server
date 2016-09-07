@@ -198,7 +198,7 @@ If you want to contribute send us an email to [`h.tammen@tammen-it-solutions.de`
 We are collaborating / communication via [Slack](https://slack.com/) and will invite you to our team as soon as we receive a request for contribution.
 We manage our tasks via [zube.io](https://zube.io). We will also authorize you to our zube scrum board if you want to contribute to the project.
 
-You can also have a look at the [DEV_NOTES.md](DEV_NOTEST.md) file to get more details about our development process.
+You can also have a look at the [DEV_NOTES.md](DEV_NOTES.md) file to get more details about our development process.
 
 
 
