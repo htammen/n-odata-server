@@ -6,6 +6,7 @@ import constants = require('../../constants/odata_constants');
 import {MetaAssociation} from "./metaAssociation";
 import builder = require("xmlbuilder");
 import {LoopbackModelProperty} from "../../types/loopbacktypes";
+import {ODataType} from "../../constants/odata_enums";
 
 var logger = log4js.getLogger('metadata');
 
@@ -45,9 +46,10 @@ export class Metadata {
 
 					// exclude deprecated properties
 					if (property.deprecated !== true) {
-						var edmType:String = commons.convertType(property);
-						edmType = edmType || property.type.name;
-						arrProps.push({"@Name": propName, "@Type": edmType});
+						var edmType:ODataType = commons.convertType(property);
+						let edmTypeStr: string = ODataType.getEdmString(edmType);
+						edmTypeStr = edmTypeStr || property.type.name;
+						arrProps.push({"@Name": propName, "@Type": edmTypeStr});
 					}
 
 					if (property.id) {
@@ -121,12 +123,12 @@ export class Metadata {
 					}
 					return Association;
 				}).then(function (Associations:Array<any>) {
-					Promise.all(associationSetPromises).then(function (associationSetPromises) {
-							var AssociationSet:Array<any> = [];
-							for (var i = 0; i < associationSetPromises.length; i++) {
-								AssociationSet.push(associationSetPromises[i]);
-							}
-							return {Assoc: Associations, AssocSet: AssociationSet};
+				Promise.all(associationSetPromises).then(function (associationSetPromises) {
+						var AssociationSet:Array<any> = [];
+						for (var i = 0; i < associationSetPromises.length; i++) {
+							AssociationSet.push(associationSetPromises[i]);
+						}
+						return {Assoc: Associations, AssocSet: AssociationSet};
 					}
 				).then((obj:any) => {
 					var Association = obj.Assoc;
@@ -158,11 +160,9 @@ export class Metadata {
 					logger.trace('metadata xml build');
 					resolve(xmlBuilder);
 				});
-				})
+			})
 		})
 
 	};
 
 }
-
-

@@ -1,0 +1,25 @@
+{
+  "name": "Category",
+  "plural": "Categories",
+  "base": "PersistedModel",
+  "idInjection": true,
+  "options": {
+    "validateUpsert": true
+  },
+  "persistUndefinedAsNull": true,
+  "properties": {
+    "name": {
+      "type": "string"
+    }
+  },
+  "validations": [],
+  "relations": {
+    "Products": {
+      "type": "hasMany",
+      "model": "Product",
+      "foreignKey": "CategoryId"
+    }
+  },
+  "acls": [],
+  "methods": {}
+}

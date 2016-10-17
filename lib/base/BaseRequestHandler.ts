@@ -15,6 +15,7 @@ export class EntityResult {
     value:any;
 
     constructor() {
+
     };
 
     /**

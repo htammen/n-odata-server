@@ -1,0 +1,28 @@
+{
+  "name": "ProductDetail",
+  "plural": "ProductDetails",
+  "base": "PersistedModel",
+  "idInjection": true,
+  "options": {
+    "validateUpsert": true
+  },
+  "persistUndefinedAsNull": true,
+  "properties": {
+    "Details": {
+      "type": "string"
+    },
+    "productId": {
+      "type": "number",
+      "required": "true"
+    }
+  },
+  "validations": [],
+  "relations": {
+    "product": {
+      "type": "belongsTo",
+      "model": "Product"
+    }
+  },
+  "acls": [],
+  "methods": {}
+}

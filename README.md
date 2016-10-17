@@ -54,13 +54,66 @@ of your project. Add the following lines to this file
 ```
   "n-odata-server": {
     "path": "/odata/*",
-    "odataversion": "2"
+    "odataversion": "2",
+    "useViaMiddleware": true
   }
 ```
-If you are not happy with the prefix `odata` you can of course use another one. Just exchange `odata` with you prefix
-e.g. `myservice`. Then your requests to the odata service have to start with `/myservice/`.
 The line `"odataversion": "2"` means that the server works with OData V2. We highly recommend to use this version at the
 moment.
+
+Additionally you have to add route handling information to the file  
+`server/middleware.json`  
+An example of the configuration you see here:
+```
+{
+  "initial:before": {
+    "loopback#favicon": {}
+  },
+  "initial": {
+    "compression": {},
+    "cors": {
+      "params": {
+        "origin": true,
+        "credentials": true,
+        "maxAge": 86400
+      }
+    }
+  },
+  "session": {},
+  "auth": {},
+  "parse": {},
+	"routes": {
+		"n-odata-server#odata": {
+			"paths": [
+				"/odata/*"
+			]
+		},
+		"loopback#rest": {
+			"paths": [
+				"${restApiRoot}"
+			]
+		}
+	},
+  "files": {
+    "loopback#static": {
+      "params": "$!../client"
+    }
+  },
+  "final": {
+    "loopback#urlNotFound": {}
+  },
+  "final:after": {
+    "loopback#errorHandler": {}
+  }
+}
+
+```
+With this configuration you can use the `odata` prefix to execute OData calls and the `api` prefix (loopback default) to execute standard restful json calls.
+If you are not happy with the prefix `odata` you can of course use another one. Just exchange `odata` with your prefix in the `paths` array.
+e.g. `myservice`. Then your requests to the odata service have to start with `/myservice/`.
+
+See express documentation for more details on defining routes.
+
 
 ### Firing OData requests
 To fire your OData request simply start your server application with
@@ -148,6 +201,10 @@ Currently we don't support
 flag
 * Atom / XML request. As mentioned above we only support JSON.
 
+### Authentication and Authorization
+n-odata-server leverages the authentication and authorization mechanisms supplied by loopback. 
+We have provided a [wiki page](https://github.com/htammen/n-odata-server/wiki/authorization) to help you get started easily with this topic.
+
 ### Logging
 We use [log4js](https://github.com/nomiddlename/log4js-node) for internal logging purposes.
 Per default we log to the console and to a file named `n_odata_server.log` that is created in the root directory of your
@@ -191,7 +248,7 @@ on your data. We try to implement some more useful functionality as soon as poss
 more stable every day.
 
 ### Release Notes
-To see what's implemented yet have a look at our [release notes](https://github.com/htammen/n-odata-server/wiki/Release%20Notes)
+To see what's implemented yet have a look at our [release notes](CHANGELOG.md)
 
 ## Contribute
 If you want to contribute send us an email to [`h.tammen@tammen-it-solutions.de`](mailto:h.tammen@tammen-it-solutions.de).

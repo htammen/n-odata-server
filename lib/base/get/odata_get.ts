@@ -15,6 +15,7 @@ import {LoopbackModelClass} from "../../types/loopbacktypes";
 import {RequestModelClass} from "../../types/n_odata_types";
 import {Request} from "express-serve-static-core";
 import {Response} from "express-serve-static-core";
+import {ODataType} from "../../constants/odata_enums";
 
 /** Interface for metadata of OData */
 interface Metadata {
@@ -229,7 +230,8 @@ export class ODataGetBase extends BaseRequestHandler.BaseRequestHandler {
 						// after filter and search has been applied
 						if (req.query.$count !== undefined) {
 							if (req.accepts("text/plain")) {
-								ModelClass.count(filter, function (err, count) {
+								let oCountFilter:any = filter.where;
+								ModelClass.count(oCountFilter, function (err, count) {
 									res.set('Content-Type', 'text/plain');
 									res.send(count.toString());
 								})
@@ -300,8 +302,8 @@ export class ODataGetBase extends BaseRequestHandler.BaseRequestHandler {
 								data.forEach(((object, idx, arr) => {
 									var propertyType = commons.convertType(ModelClass.definition._ids[0].property);
 									switch (propertyType) {
-										case "Edm.Decimal":
-										case "Edm.Int32":
+										case ODataType.EDM_DECIMAL:
+										case ODataType.EDM_INT32:
 											object.__data.__metadata = {
 												uri: commons.getBaseURL(req) + '/' + commons.getPluralForModel(ModelClass) + '(' + object.getId() + ')',
 												type: constants.ODATA_NAMESPACE + '.' + ModelClass.definition.name
@@ -392,7 +394,20 @@ export class ODataGetBase extends BaseRequestHandler.BaseRequestHandler {
 					let ModelClass = oResult.modelClass;
 					if (ModelClass) {
 						if (req.accepts("text/plain")) {
-							ModelClass.count(oResult.foreignKeyFilter, function (err, count) {
+							var filter:any = {}; //LoopbackFilter.where
+							//TODO: apply $filter parameter
+							filter = _applyFilter.call(this, req, filter);
+							if(oResult.foreignKeyFilter) {
+								if(!filter) {
+									filter = oResult.foreignKeyFilter;
+								} else {
+									filter = { "and" : [filter.where, oResult.foreignKeyFilter]};
+								}
+							}else{
+								filter = filter.where;
+							}
+
+							ModelClass.count(filter, function(err, count) {
 								if (!err) {
 									resolve(count);
 								} else {
@@ -485,11 +500,11 @@ export class ODataGetBase extends BaseRequestHandler.BaseRequestHandler {
 								}
 
 								//add metadata
-								let propertyType:String = commons.convertType(ModelClass.definition._ids[0].property)
+								let propertyType:ODataType = commons.convertType(ModelClass.definition._ids[0].property)
 								let sKey:string;
 								switch (propertyType) {
-									case "Edm.Decimal":
-									case "Edm.Int32":
+									case ODataType.EDM_DECIMAL:
+									case ODataType.EDM_INT32:
 										sKey = commons.getBaseURL(req) + '/' + commons.getPluralForModel(ModelClass) + '(' + id + ')';
 										break;
 									default:
@@ -558,10 +573,10 @@ export class ODataGetBase extends BaseRequestHandler.BaseRequestHandler {
 					if (oItem[rel].__deferred) continue;
 
 					//individual result metadata (key type check to insert 'key' or not.
-					var propertyType = commons.convertType(ModelClass.definition._ids[0].property);
+					var propertyType:ODataType = commons.convertType(ModelClass.definition._ids[0].property);
 					switch (propertyType) {
-						case "Edm.Decimal":
-						case "Edm.Int32":
+						case ODataType.EDM_DECIMAL:
+						case ODataType.EDM_INT32:
 							if (oItem[rel].__data instanceof Array) {
 								//if we have a collection, insert just one entity
 								oItem[rel].__data.map(function (oData) {
@@ -649,10 +664,10 @@ export class ODataGetBase extends BaseRequestHandler.BaseRequestHandler {
 				//If it's an Array, the metadata needs to be inside each one
 				for (var i in oModelData) {
 					//TODO: Modularize the metadata key creation process in commons library
-					var propertyType = commons.convertType(ModelClass.definition._ids[0].property);
+					var propertyType:ODataType = commons.convertType(ModelClass.definition._ids[0].property);
 					switch (propertyType) {
-						case "Edm.Decimal":
-						case "Edm.Int32":
+						case ODataType.EDM_DECIMAL:
+						case ODataType.EDM_INT32:
 							oModelData[i].__metadata = {
 								uri: commons.getBaseURL(req) + '/' + commons.getPluralForModel(ModelClass) + '(' + oModelData[i].id + ')',
 								type: constants.ODATA_NAMESPACE + '.' + ModelClass.definition.name
@@ -689,10 +704,10 @@ export class ODataGetBase extends BaseRequestHandler.BaseRequestHandler {
 			} else if (oModelData instanceof Object) {
 				//if it's a single entry, metadata needs to be at the end
 				//TODO: Modularize the metadata key creation process in commons library
-				var propertyType = commons.convertType(ModelClass.definition._ids[0].property);
+				var propertyType:ODataType = commons.convertType(ModelClass.definition._ids[0].property);
 				switch (propertyType) {
-					case "Edm.Decimal":
-					case "Edm.Int32":
+					case ODataType.EDM_DECIMAL:
+					case ODataType.EDM_INT32:
 						oModelData.__metadata = {
 							uri: commons.getBaseURL(req) + '/' + commons.getPluralForModel(ModelClass) + '(' + oModelData.id + ')',
 							type: constants.ODATA_NAMESPACE + '.' + ModelClass.definition.name
@@ -740,10 +755,10 @@ export class ODataGetBase extends BaseRequestHandler.BaseRequestHandler {
 	 */
 	_createDeferredObject(instance:{__data:any}, rel:string, req:any, ModelClass:any, id:any) {
 		if (!instance.__data[rel]) {
-			var propertyType = commons.convertType(ModelClass.definition._ids[0].property);
+			var propertyType:ODataType = commons.convertType(ModelClass.definition._ids[0].property);
 			switch (propertyType) {
-				case "Edm.Decimal":
-				case "Edm.Int32":
+				case ODataType.EDM_DECIMAL:
+				case ODataType.EDM_INT32:
 					instance.__data[rel] = {
 						__deferred: {
 							uri: commons.getBaseURL(req) + '/' + commons.getPluralForModel(ModelClass) + '(' + id + ')/' + rel
@@ -806,11 +821,15 @@ function _findInstanceByIdOrForeignkey(ModelClass:LoopbackModelClass, id:any, fi
 		if (oReqQueryObject.foreignKeyFilter) {
 			ModelClass.find({where: oReqQueryObject.foreignKeyFilter}).then(((instances) => {
 				resolve(instances);
-			}));
+			})).catch((err) => {
+				reject(err);
+			});
 		} else {
 			ModelClass.findById(id, filter).then(((instance) => {
 				resolve([instance]);
-			}));
+			})).catch((err) => {
+				reject(err);
+			});
 		}
 	});
 }
@@ -847,7 +866,7 @@ function _applySelect(req, filter?:LoopbackFilter) {
  * @private
  */
 function _applyFilter(req, filter?:LoopbackFilter):LoopbackFilter {
-	var filterParam:string = req.query.$filter;
+	let filterParam:string = req.query && req.query.$filter || undefined;
 	filter = filter || {}; // just to ensure that filter can't be undefined
 	if (filterParam) {
 		var filterString:string = "$filter=" + filterParam;

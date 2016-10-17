@@ -45,7 +45,7 @@ export class ODataGet extends ODataGetBase.ODataGetBase implements GetRequestHan
 					res.send(result);
 				}, (error) => {
 					console.error('An error occured: ', error);
-					res.sendStatus(500).send(error.toString());
+					res.status(500).send(error.toString());
 				})
 				break;
 
@@ -82,7 +82,7 @@ export class ODataGet extends ODataGetBase.ODataGetBase implements GetRequestHan
 					res.send(result);
 				}, (error) => {
 					console.error('An error occured: ', error);
-					res.sendStatus(500).send(error.toString());
+					res.status(500).send(error.toString());
 				});
 				break;
 

@@ -1,0 +1,66 @@
+{
+  "name": "BusinessTrip",
+  "plural": "BusinessTrips",
+  "base": "PersistedModel",
+  "options": {
+    "validateUpsert": true
+  },
+  "persistUndefinedAsNull": true,
+  "properties": {
+    "id": {
+      "type": "string",
+      "id": true,
+      "defaultFn": "guid"
+    },
+    "Starttime": {
+      "type": "date",
+      "required": true
+    },
+    "Endtime": {
+      "type": "date",
+      "required": true
+    },
+    "Location": {
+      "type": "string",
+      "required": true
+    },
+    "Customer": {
+      "type": "string"
+    },
+    "Distance": {
+      "type": "number"
+    },
+    "Note": {
+      "type": "string"
+    },
+    "Breakfast": {
+      "type": "Boolean",
+      "default": false
+    },
+    "Lunch": {
+      "type": "Boolean",
+      "default": false
+    },
+    "Dinner": {
+      "type": "Boolean",
+      "default": false
+    }
+  },
+  "validations": [],
+  "relations": {},
+  "acls": [
+    {
+      "accessType": "*",
+      "principalType": "ROLE",
+      "principalId": "r_businesstrips_access",
+      "permission": "ALLOW"
+    },
+    {
+      "accessType": "*",
+      "principalType": "ROLE",
+      "principalId": "$everyone",
+      "permission": "DENY"
+    }
+  ],
+  "methods": {}
+}

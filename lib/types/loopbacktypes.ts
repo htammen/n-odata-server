@@ -1,6 +1,9 @@
+import * as express from "express";
+
 /** Interface for loopback application */
-export interface LoopbadkApp {
+export interface LoopbackApp {
 	models: any;
+	remotes: Function;
 }
 
 /** Interface for loopback filter definition */
@@ -77,8 +80,13 @@ export interface LoopbackModelClass {
 
 export interface LoopbackModelProperty {
 	deprecated?: boolean,
+	generated?: boolean,
 	type?: {
 		name: string
 	},
 	id: string
+}
+
+export interface LoopbackRequest extends express.Request {
+	accessToken?: any
 }
