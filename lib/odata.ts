@@ -128,7 +128,7 @@ export class OData {
 				} else if (this._oDataServerConfig.odataversion === "2") {
 					this._handleODataVersion2(loopbackApplication, options);
 				} else {
-					console.log("odata version " + this._oDataServerConfig.odataversion + " not supported yet");
+					logger.trace("odata version " + this._oDataServerConfig.odataversion + " not supported yet");
 				}
 			}
 
@@ -212,7 +212,7 @@ export class OData {
 				res.status(statusCode).send(err);
 			});
 		} catch (e) {
-			console.log(e);
+			logger.error(e);
 			res.status(500).send(e);
 		}
 	}
@@ -262,7 +262,7 @@ export class OData {
 				res.status(statusCode).send(err);
 			});
 		} catch (e) {
-			console.log(e);
+			logger.error(e);
 			res.status(500).send(e);
 		}
 	}
@@ -390,7 +390,7 @@ export class OData {
 						if (ctx.method.ctor.checkAccess) {
 							ctx.method.ctor.checkAccess(req.accessToken, ctx.instance.id, ctx.method, ctx, (err, allowed) => {
 								if (err) {
-									console.log(err);
+									logger.error(err);
 									reject(err);
 								} else if (allowed) {
 									// delegate to get module

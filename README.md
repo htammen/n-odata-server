@@ -55,18 +55,14 @@ of your project. Add the following lines to this file
   "n-odata-server": {
     "path": "/odata/*",
     "odataversion": "2",
-    "useViaMiddleware": true,
-    "logger" : false
+    "useViaMiddleware": true
   }
 ```
 The line `"odataversion": "2"` means that the server works with OData V2. We highly recommend to use this version at the
 moment.
 
-The line `"logger": false` means that the logger is turned off (recommended for productive usage). If this line is
-omitted or is set to true, the log will be turned on and will generate logs in file and console.
-
-Additionally you have to add route handling information to the file
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;`server/middleware.json`
+Additionally you have to add route handling information to the file  
+`server/middleware.json`  
 An example of the configuration you see here:
 ```
 {
@@ -204,6 +200,10 @@ Currently we don't support
 * Batch requests. You have to configure your frontend to not using these. In SAPUI5 / OpenUI5 this can be done by setting a
 flag
 * Atom / XML request. As mentioned above we only support JSON.
+
+### Authentication and Authorization
+n-odata-server leverages the authentication and authorization mechanisms supplied by loopback. 
+We have provided a [wiki page](https://github.com/htammen/n-odata-server/wiki/authorization) to help you get started easily with this topic.
 
 ### Logging
 We use [log4js](https://github.com/nomiddlename/log4js-node) for internal logging purposes.

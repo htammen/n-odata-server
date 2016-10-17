@@ -25,8 +25,7 @@ export = {
     getModelClass: _getModelClass,
     getRequestModelClass: _getRequestModelClass,
     getIdByPropertyType: _getIdByPropertyType,
-    convertType: _convertType,
-    isLoggerOn: _isLoggerOn
+    convertType: _convertType
 };
 
 var logger = log4js.getLogger("odata");
@@ -454,11 +453,6 @@ function _convertType(property:LoopbackModelProperty):ODataType {
     return retValue;
 }
 
-function _isLoggerOn() {
-    if (typeof oDataServerConfig !== "undefined") {
-        return oDataServerConfig.logger;
-    }
-}
 
 
 

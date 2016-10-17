@@ -16,7 +16,6 @@ export interface ODataServerConfig {
 	odataversion?: string;
 	odataPrefix: string;
 	useViaMiddleware?: boolean;
-	logger?: boolean;
 }
 
 

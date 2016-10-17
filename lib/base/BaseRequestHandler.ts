@@ -15,7 +15,7 @@ export class EntityResult {
     value:any;
 
     constructor() {
-        
+
     };
 
     /**
@@ -180,9 +180,6 @@ export class BaseRequestHandler implements IBaseRequestHandler {
  * @private
  */
 function _setConfig(config:ODataServerConfig) {
-    if(!config.logger){
-        logger.setLevel("OFF");
-    }
     logger.info("component config set to %s", JSON.stringify(config, null, '\t'));
     this.oDataServerConfig = config;
 }
