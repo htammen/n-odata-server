@@ -970,11 +970,15 @@ function _convertAstToLoopbackFilter(ast:any, where:any):any {
 				if (ast.type === 'ge')  ast.type = 'gte';
 				if (ast.type === 'le')  ast.type = 'lte';
 
+				// properties of associated objects are refererred in OData with / but in
+				// loopback with . --> exchange / by .
+				let propName = ast.left.name;
+				propName = propName.replace(/\//g, ".");
 				if (ast.type === 'eq') {
-					where[ast.left.name] = ast.right.value;
+					where[propName] = ast.right.value;
 				} else {
-					where[ast.left.name] = {};
-					where[ast.left.name][ast.type] = ast.right.value;
+					where[propName] = {};
+					where[propName][ast.type] = ast.right.value;
 				}
 			} else if (ast.left.type === 'functioncall') {
 				// if functioncall is made in a form like $filter=startswith(ContactTitle, 'Order') eq true
