@@ -84,6 +84,7 @@ export class ODataPostBase extends BaseUpdateRequestHandler {
 					reject(404);
 				}
 			}).catch(err => {
+				logger.error(err);
 				reject(err);
 			})
 

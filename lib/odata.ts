@@ -176,6 +176,7 @@ export class OData {
 			logger.info("processing OData V2 request of type " + req.method);
 			logger.debug("baseUrl = " + req.baseUrl);
 			this.checkAccess(req, res).then(() => {
+				logger.debug("checkAccess passed successfully")
 				let method:HttpMethod = this.getRequestMethod(req);
 				switch (method) {
 					case HttpMethod.GET:
@@ -192,14 +193,14 @@ export class OData {
 						var i = 2;
 						break;
 					//// PATCH should be the preferred method to update an entity
-					//case 'PATCH':
-					//	_handlePATCH.call(this, req, res);
-					//	break;
+					case HttpMethod.PATCH:
+						this._handlePatch(req, res);
+						break;
 					//// MERGE is used in OData V2.0 to update an entity. This has been changed in
 					//// in V4.0 to PATCH
-					//case 'MERGE':
-					//	_handlePATCH.call(this, req, res);
-					//	break;
+					case HttpMethod.MERGE:
+						this._handleMerge(req, res);
+						break;
 					case HttpMethod.DELETE:
 						this._handleDelete(req, res);
 						break;
@@ -355,6 +356,7 @@ export class OData {
 		{
 			// $metadata and service requests are allways allowed
 			if(req.params[0] === "$metadata" || req.params[0] === "") {
+				logger.debug(`call to ${req.params[0]}. Doesn't need checkAccess`);
 				resolve();
 			} else {
 				// get the http verb from the request
@@ -422,13 +424,13 @@ export class OData {
 							});
 						}
 					} else {
-						console.error(`Something went wrong with retrieving requestModelClass for request ${req.params[0]}`);
+						logger.error(`Something went wrong with retrieving requestModelClass for request ${req.params[0]}`);
 						let err = new Error(`You don't have access to request ${req.params[0]}.`) as any;
 						err.statusCode = 401;
 						reject(err);
 					}
 				}).catch(err => {
-					console.error(err);
+					logger.error(err);
 					reject(err);
 				});
 			}
