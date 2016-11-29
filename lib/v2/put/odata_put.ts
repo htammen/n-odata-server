@@ -24,8 +24,7 @@ export class ODataPut extends ODataPutBase implements PutRequestHandler{
 	}
 
 	handleMerge(req, res) {
-		// TODO: here we must call _handleMerge which has to be implemented first
-		super._handlePut(req, res).then(result => {
+		super._handlePatch(req, res).then(result => {
 			res.sendStatus(204)
 		}).catch(err => {
 			super.handleError(err, res);
