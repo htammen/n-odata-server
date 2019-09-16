@@ -497,6 +497,8 @@ export class ODataGetBase extends BaseRequestHandler.BaseRequestHandler {
 								//create metadata for expanded
 								for (var rel in ModelClass.relations) {
 									this._createMetadataForExpanded(instance, rel, req, ModelClass.relations[rel].modelTo, id, result.data);
+									// put the expanded results in "results" property like it's required by OData protocol and UI5 ODataModel works
+									result.data[rel] = { results: result.data[rel] };
 								}
 
 								//add metadata
