@@ -516,7 +516,7 @@ export class OData {
 			lbMethod;
 
 		if (match) {
-			lbMethod = lbClass.findMethodByName("updateAttributes", false);
+			lbMethod = lbClass.findMethodByName("updateAll", false);
 			_id = match[1];
 		}
 
