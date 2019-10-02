@@ -110,7 +110,7 @@ function _getRequestType(req) {
  */
 function _isRequestCollection(req) {
     var retValue = false;
-    var reqParts = /^([^/(]+)(?:[(](.*)[)])?(?:[/]([A-Za-z]+))?/g.exec(req.params[0]);
+    var reqParts = /^([^/(]+)(?:[(](.*)[)])?(?:[/]([A-Za-z_]+))?/g.exec(req.params[0]);
     // reqParts = [full_match, model, id, property]
     // util.inspect(reqParts);
 
@@ -147,7 +147,7 @@ function _isRequestCollection(req) {
  */
 function _isRequestEntity(req) {
     var retValue = false;
-    var reqParts = /^([^/(]+)(?:[(](.*)[)])?(?:[/]([A-Za-z]+))?/g.exec(req.params[0]);
+    var reqParts = /^([^/(]+)(?:[(](.*)[)])?(?:[/]([A-Za-z_]+))?/g.exec(req.params[0]);
     // reqParts = [full_match, model, id, property]
     //util.inspect(reqParts);
     var models = req.app.models();
@@ -263,7 +263,7 @@ function _getIdByPropertyType(sRawId, property:LoopbackModelProperty) {
  * @return {[type]}                Promise that resolves to a ModelClass
  */
 function _getRequestModelClass(models:Function, requestUri:string) {
-    var reqParts = /^([^/(]+)(?:[(](.*)[)])?(?:[/]([A-Za-z]+))?/g.exec(requestUri);
+    var reqParts = /^([^/(]+)(?:[(](.*)[)])?(?:[/]([A-Za-z_]+))?/g.exec(requestUri);
     if (!reqParts[3]) {
         return new Promise(function (resolve, reject) {
             _getModelClass(models, reqParts[1]).then(function (ModelClass) {
@@ -300,6 +300,20 @@ function _getRequestModelClass(models:Function, requestUri:string) {
                         }
                         let idName = BaseModelClass.getIdName();
                         var sRequestId = _getIdByPropertyType(reqParts[2], BaseModelClass.definition.properties[idName]);
+
+                        // handle many-to-many case
+                        if (modelRel[reqParts[3]].through) {
+                            _getModelClass(models, modelRel[reqParts[3]].model).then(function (ModelClass) {
+                                resolve({
+                                    modelClass: BaseModelClass,
+                                    requestId: sRequestId,
+                                    through: true,
+                                    relationName: reqParts[3],
+                                    relationModelClass: ModelClass
+                                } as RequestModelClass);
+                                return;
+                            });
+                        }
 
                         switch (modelRel[reqParts[3]].type) {
                             case lbConstants.LB_REL_HASMANY:
