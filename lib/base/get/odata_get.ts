@@ -200,8 +200,13 @@ export class ODataGetBase extends BaseRequestHandler.BaseRequestHandler {
 	 */
 	_getCollectionData(req, res) {
 		return new Promise((resolve, reject) => {
+			let that = this;
 			//DONE: The odata.nextLink annotation MUST be included in a response that represents a partial result. "@odata.nextLink": "...?$skiptoken=342r89"
 			commons.getRequestModelClass(req.app.models as Function, req.params[0] as string).then((function (oResult:RequestModelClass) {
+				if (oResult.through) {
+					return that._getM2MCollectionData(req, res, oResult, resolve, reject);
+				}
+
 				var ModelClass = oResult.modelClass;
 				try {
 					if (ModelClass) {
@@ -379,6 +384,186 @@ export class ODataGetBase extends BaseRequestHandler.BaseRequestHandler {
 	};
 
 	/**
+	 * Get all records for a collection. The name of the collection
+	 * is given in the 1st request parameter
+	 * @param  {[type]} req [description]
+	 * @param  {[type]} res [description]
+	 * @return {[type]}     [description]
+	 */
+	_getM2MCollectionData(req, res, oResult:RequestModelClass, resolve, reject) {
+			var ModelClass = oResult.modelClass;
+			var RelationModelClass = oResult.relationModelClass;
+			try {
+				if (ModelClass) {
+					ModelClass.findById(oResult.requestId)
+						.then((BaseInstance) => {
+							// Retrieve odata.maxpagesize from Prefer header of the request
+							var _maxpagesize;
+							var reqHeaderArr = req_header.getPreferHeader(req);
+							reqHeaderArr.forEach(function (obj, idx, arr) {
+								if (obj[0] === 'maxpagesize') {
+									_maxpagesize = obj[1];
+								}
+							});
+
+							var filter:LoopbackFilter = {};
+							//TODO: apply $filter parameter
+							filter = _applyFilter.call(this, req, filter);
+							//TODO: apply $search parameter
+
+							// if user appended the $count parameter she just wants the number of records
+							// after filter and search has been applied
+							if (req.query.$count !== undefined) {
+								if (req.accepts("text/plain")) {
+									let oCountFilter:any = filter.where;
+									BaseInstance[oResult.relationName].count(oCountFilter, function (err, count) {
+										res.set('Content-Type', 'text/plain');
+										res.send(count.toString());
+									})
+								} else {
+									res.sendStatus(415)
+								}
+							} else {
+								// here we do the main work if the user wants data from a collection
+								var nextLink;
+
+								// retrieve only top=xx records
+								if (req.query.$top) {
+									filter.limit = req.query.$top;
+								}
+								// the implementation of $skiptoken is service specific. We define that $skiptoken behaves like $skip
+								if (req.query.$skip || req.query.$skiptoken) {
+									filter.skip = req.query.$skip || req.query.$skiptoken;
+								}
+								// adjust the number of records that are returned according to the maxpagesize setting, either by client
+								// or by the server application
+								if (!filter.limit || filter.limit > this.oDataServerConfig.maxpagesize || (_maxpagesize && filter.limit > _maxpagesize)) {
+									let effectiveMaxSize = this.oDataServerConfig.maxpagesize;
+									if (_maxpagesize && effectiveMaxSize && parseInt(_maxpagesize) < parseInt(effectiveMaxSize)) {
+										effectiveMaxSize = _maxpagesize;
+									}
+									// if limit has not been set yet we have to add a nextLink property to the response to enable the user to automatically
+									// page to the next chunk of data
+									if (!filter.limit) {
+										var _skiptoken:number = req.query.$skiptoken;
+										_skiptoken = (!isNaN(_skiptoken) ? _skiptoken + parseInt(effectiveMaxSize) : parseInt(effectiveMaxSize));
+										nextLink = commons.getBaseURL(req) + '/' + commons.getPluralForModel(RelationModelClass) + '?$skiptoken=' + _skiptoken;
+										// if nextLink is set, means we deliver partially response, we need to know if there would be more data
+										// if the nextLink is processed. If the current data chunk is the last one we MUST NOT set the nextLink into
+										// the response
+										if (nextLink) {
+											var nlFilter:any = {};
+											nlFilter.skip = _skiptoken;
+											nlFilter.limit = 1;	// just need to test if there is at least one more record
+											// TODO: uiii, this hast to be moved to the promise chain a few lines down cause asynchronosy it's not
+											// said that nextlink is detemined before the other db calls.
+											BaseInstance[oResult.relationName].find(nlFilter, function (err, data) {
+												if (data.length === 0) {
+													nextLink = undefined;
+												}
+											});
+										}
+
+										// set the filter limit to the calculated maxSize
+										filter.limit = effectiveMaxSize;
+										res.set('Preference-Applied', 'odata.maxpagesize=' + effectiveMaxSize);
+									}
+								}
+
+								// apply $select URL parameter
+								filter = _applySelect.call(this, req, filter);
+								// apply $expand URL parameter
+								filter = _applyExpand.call(this, req, filter);
+								console.log("filter: " + JSON.stringify(filter));
+
+								// apply $orderBy
+								filter = _applyOrderBy.call(this, req, filter);
+
+
+								// Now we call the find method of the ModelClass with filter definition
+								var result:CollectionResult = new CollectionResult();
+								BaseInstance[oResult.relationName].find(filter).then(((data) => {
+									// add metadata
+									data.forEach(((object, idx, arr) => {
+										var propertyType = commons.convertType(ModelClass.definition._ids[0].property);
+										switch (propertyType) {
+											case ODataType.EDM_DECIMAL:
+											case ODataType.EDM_INT32:
+												object.__data.__metadata = {
+													uri: commons.getBaseURL(req) + '/' + commons.getPluralForModel(RelationModelClass) + '(' + object.getId() + ')',
+													type: constants.ODATA_NAMESPACE + '.' + RelationModelClass.definition.name
+												};
+												break;
+											default:
+												object.__data.__metadata = {
+													uri: commons.getBaseURL(req) + '/' + commons.getPluralForModel(RelationModelClass) + '(\'' + object.getId() + '\')',
+													type: constants.ODATA_NAMESPACE + '.' + RelationModelClass.definition.name
+												};
+												break;
+										}
+										// add deferred relations
+										for (var rel in RelationModelClass.relations) {
+											this._createDeferredObject(object, rel, req, RelationModelClass, object.getId());
+										}
+
+										//create metadata for expanded
+										for (var rel in oResult.relationModelClass.relations) {
+											this._createMetadataForExpanded(object, rel, req, RelationModelClass.relations[rel].modelTo, object.getId(), data);
+										}
+									}).bind(this));
+									// add retrieved data from backend / db to the result
+									result.data = data;
+									if (nextLink) {
+										result.nextLink = nextLink;
+									}
+									return result;
+								}).bind(this)).then(function (result) {
+									// if $inlinecount was requested we have to count all records in the database
+									if (req.query.$inlinecount) {
+										BaseInstance[oResult.relationName].count().then(function (resultCount) {
+											//noinspection TypeScriptUnresolvedVariable
+											result.count = resultCount;
+											resolve(result);
+										})
+									} else {
+										resolve(result);
+									}
+								}).catch(err => {
+									console.error(err);
+									reject(err);
+								});
+
+
+								//ModelClass.find(filter, function (err, data) {
+								//	var result:CollectionResult = new CollectionResult();
+								//
+								//	//// if $inlinecount was requested we have to count all records in the database
+								//	//if(req.query.$inlinecount) {
+								//   //
+								//	//}
+								//
+								//	result.data = data;
+								//	if (nextLink) {
+								//		result.nextLink = nextLink;
+								//	}
+								//	resolve(result);
+								//	//cb(result, data);
+								//});
+							}
+						})
+						.catch(reject);
+
+
+				} else {
+					reject(Error("request failed"));
+					//res.sendStatus(404);
+				}
+			} catch (e) {
+				reject(e);
+			}
+	};
+
+	/**
 	 * Retrieves the total number of records for a collection in the data store
 	 * @param req
 	 * @param res
@@ -497,7 +682,6 @@ export class ODataGetBase extends BaseRequestHandler.BaseRequestHandler {
 								//create metadata for expanded
 								for (var rel in ModelClass.relations) {
 									this._createMetadataForExpanded(instance, rel, req, ModelClass.relations[rel].modelTo, id, result.data);
-									// put the expanded results in "results" property like it's required by OData protocol and UI5 ODataModel works
 									result.data[rel] = { results: result.data[rel] };
 								}
 
