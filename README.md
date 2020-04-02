@@ -1,4 +1,4 @@
-__This project will no be longer maintained cause of lack of interest, external support and external contribution. At the other side SAP, my main use case for this, developed [CAP](https://cap.cloud.sap/docs/) which solves by motivation for this repository.  
+__This project will no be longer maintained cause of lack of interest, external support and external contribution. At the other side SAP, my main use case for this, developed [CAP](https://cap.cloud.sap/docs/) which solves my motivation for this repository.  
 I'm sorry for that. You can use this repository as is or feel free to fork and enhance it.__
 
 # n-odata-server, The node OData server for the loopback framework
