@@ -467,10 +467,10 @@ export class OData {
 			_id,
 			lbMethod;
 		if (match) {
-			lbMethod = lbClass.find("findById", true);
+			lbMethod = lbClass.findMethodByName("findById", true);
 			_id = match[1];
 		} else {
-			lbMethod = lbClass.find("find", true);
+			lbMethod = lbClass.findMethodByName("find", true);
 		}
 
 		return {
@@ -491,7 +491,7 @@ export class OData {
 	private getPOSTCheckAccessContext(req: LoopbackRequest, lbClass: any) {
 		// find "create" method in sharedMethods --> this method has to be secured via a POST request
 		let lbMethod;
-		lbMethod = lbClass.find("create", true);
+		lbMethod = lbClass.findMethodByName("create", true);
 
 		return {
 			method: lbMethod,
@@ -516,7 +516,7 @@ export class OData {
 			lbMethod;
 
 		if (match) {
-			lbMethod = lbClass.find("updateAttributes", false);
+			lbMethod = lbClass.findMethodByName("updateAll", false);
 			_id = match[1];
 		}
 
@@ -543,7 +543,7 @@ export class OData {
 			lbMethod;
 
 		if (match) {
-			lbMethod = lbClass.find("destroyById", true);
+			lbMethod = lbClass.findMethodByName("destroyById", true);
 			_id = match[1];
 		}
 
