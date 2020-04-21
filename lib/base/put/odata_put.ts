@@ -49,7 +49,7 @@ export class ODataPutBase extends BaseUpdateRequestHandler {
 					// If not defined there set default value or undefined if no default has been defined
 					var updateObj:Object = {};
 					ModelClass.forEachProperty((propName, property) => {
-						if (reqObj[propName]) {
+						if (typeof reqObj[propName] !== 'undefined') {
 							// With date types we allow OData dates as well as Javascript dates
 							if(property.type.name === "Date") {
 								if(reqObj[propName].indexOf("/Date(") > -1) {
@@ -123,7 +123,7 @@ export class ODataPutBase extends BaseUpdateRequestHandler {
 					// If not defined there set default value or undefined if no default has been defined
 					var updateObj = {};
 					ModelClass.forEachProperty((propName, property) => {
-						if (reqObj[propName]) {
+						if (typeof reqObj[propName] !== 'undefined') {
 							if(property.type.name === "Date") {
 								if(reqObj[propName].indexOf("/Date(") > -1) {
 									updateObj[propName] = new Date(parseInt(reqObj[propName].substr(6)));
